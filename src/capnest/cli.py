@@ -64,10 +64,15 @@ def workspace_from(ctx: typer.Context) -> Workspace:
 
 def register_commands() -> None:
     """注册全部命令。拆开是为了让 `cli.py` 只剩装配逻辑。"""
-    from capnest.commands import doctor, init
+    from capnest.commands import add, doctor, init, ls, profile, search, validate
 
     app.command("init")(init.init)
     app.command("doctor")(doctor.doctor)
+    app.command("add")(add.add)
+    app.command("list")(ls.ls)
+    app.command("search")(search.search)
+    app.command("validate")(validate.validate)
+    app.add_typer(profile.app, name="profile")
 
 
 def main(argv: list[str] | None = None) -> None:
