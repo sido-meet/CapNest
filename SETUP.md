@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-仓库处于**实现阶段**：M0 工程地基与 M1 资产层已落地。当前可用的命令是 `init` / `doctor` / `add` / `list` / `search` / `validate` / `profile`；`plan` / `apply` / `status` / `rollback` 在 M2 之后可用。逐条进度见 [007 Tasks](docs/007-tasks.md)。
+仓库处于**实现阶段**：M0 工程地基、M1 资产层与 M2 部署层（Skill 子集）已落地，第一刀的完整闭环可用——`init` → `add` → `profile create` → `plan` → `apply` → `status` → `rollback`。MCP Server 部署、漂移检测与 GUI 属于第二刀及以后。逐条进度见 [007 Tasks](docs/007-tasks.md)。
 
 ## 1. 环境准备
 
@@ -119,15 +119,19 @@ uv run capnest --workspace .\workspace plan --profile data-agent --target mcode,
 ### 2.6 应用与验证
 
 ```powershell
-uv run capnest --workspace .\workspace apply --profile data-agent --target mcode,claude-code
+uv run capnest --workspace .\workspace apply --profile data-agent --target mcode,claude-code --yes
 uv run capnest --workspace .\workspace status
 ```
+
+`apply` 只做新增与更新，**不删除**目标上多出来的文件。要写盘就得加 `--yes`（否则以退出码 5 中止并列出将要写入的内容）。
 
 ### 2.7 回滚
 
 ```powershell
 uv run capnest --workspace .\workspace rollback --target mcode
 ```
+
+回滚只动 CapNest 记录过的路径：还原备份、删除本次新建的目录、释放归属。目标上你手工改过的内容不会被回滚覆盖——那属于漂移。
 
 ## 3. 让 Agent 帮你完成
 

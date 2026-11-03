@@ -37,7 +37,7 @@
 | 资产类型 | **只有 Skill** | MCP Server、Workflow | MCP 要改写 Agent 的共享配置文件，风险高一档；Workflow 不部署 |
 | 部署目标 | `mcode` + `claude-code` | 其他 Agent | 跨 Agent 一致性就是问题本身，不能砍 |
 | 部署形态 | **只有 `copy`** | `symlink` | `symlink` 在 Windows 上需要开发者模式，不是普遍能力；目录复制是唯一普遍可用的形态 |
-| 命令 | 10 个 | `doctor` 完整版 | 「看」的工具不在闭环链路上，可后补 |
+| 命令 | 11 个 | 无 | 全部落地 |
 | 存储 | `assets/` + `profiles/` + `state/*.json` | 数据库 | 几十个资产的量级，扫目录足够 |
 | 安全底线 | 归属证明、备份、隐藏 Unicode 阻断 | 权限类别词表、密钥库 | 三条底线覆盖「不毁用户数据」 |
 
@@ -47,9 +47,11 @@
 init → add → profile create → plan → apply → status → rollback
 ```
 
-`doctor` 完整版属于自检工具，在第二刀补齐。
+`doctor` 完整版属于自检工具，随 M2 一起补齐。
 
 **`list` / `search` / `validate` 提前到 M1**：它们是纯本地逻辑，无外部依赖、无 Agent 交互，成本极低；而验收时需要 `list` 佐证「资产确实进了工作区」，推到第二刀会让 M1 缺少可观测手段。
+
+**第一刀已全部落地**：M0 工程地基、M1 资产层、M2 部署层（Skill 子集）三个里程碑都完成并打了 tag。`docs/010 §7` 的六条断言在 `tests/test_cli_e2e.py` 里逐条有对应测试，沙箱脚本 `scripts/sandbox_e2e.ps1` 与真实目录冒烟脚本 `scripts/real_smoke_test.ps1` 可以随时复跑。
 
 ### 明确不做（第一刀）
 
@@ -287,12 +289,12 @@ uv run capnest --workspace .\ws rollback --target mcode
 
 ## 8. 路线
 
-| 刀 | 内容 | 风险 |
-| --- | --- | --- |
-| **第一刀**（本文） | Skill → 两个 Agent，copy，七条命令闭环 | 低：只碰目录复制 |
-| 第二刀 | MCP Server 部署（写 `config.yaml` / `.claude.json`）+ `doctor` 完整版 | **高**：共享配置文件的无损改写 |
-| 第三刀 | 漂移检测、版本落后、Lockfile、依赖求解 | 中 |
-| 第四刀 | GUI、MCP Discovery、更多目标、plugin 形态 | 低 |
+| 刀 | 内容 | 风险 | 状态 |
+| --- | --- | --- | --- |
+| **第一刀**（本文） | Skill → 两个 Agent，copy，七条命令闭环 | 低：只碰目录复制 | ✅ 已完成（tag `m2-deployment`） |
+| 第二刀 | MCP Server 部署（写 `config.yaml` / `.claude.json`） | **高**：共享配置文件的无损改写 | 未开始 |
+| 第三刀 | 漂移检测、版本落后、Lockfile、依赖求解 | 中 | 未开始 |
+| 第四刀 | GUI、MCP Discovery、更多目标、plugin 形态 | 低 | 未开始 |
 
 **先切低风险的，是为了让第二刀失败时不至于推倒重来。** 如果先做 MCP，共享配置文件的写入问题会暴露在还没有闭环骨架的时候，返工成本高得多。
 

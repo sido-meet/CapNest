@@ -28,5 +28,6 @@ Thumbs.db
 !.env.example
 
 # 本地临时工作区（调试用）
-.tmpws/
+.tmpws*/
+.sandbox/
 

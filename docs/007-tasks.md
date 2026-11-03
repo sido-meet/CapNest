@@ -236,12 +236,12 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 
 | # | 任务 | 主要文件 | 验收 |
 | --- | --- | --- | --- |
-| [ ] T2.1 | 解析器 | `src/capnest/deployment/resolver.py` | Profile + 资产 → `DeploymentPlan`；缺失资产报错 |
-| [ ] T2.2 | Diff 引擎 | `src/capnest/deployment/diff.py` | 文件级与目录树级 unified diff |
-| [ ] T2.7 | Adapter 协议与能力矩阵 | `src/capnest/adapters/base.py` | `TargetCapabilities` / `TargetState` 定义 |
-| [ ] T2.8 | mcode 只读 | `src/capnest/adapters/mcode.py` | 读 `config.yaml` + `skills/`，归一化为 `TargetState`；不碰 `.builtin-skills/` |
-| [ ] T2.10 | Claude Code 只读 | `src/capnest/adapters/claude_code.py` | 读 `.claude.json` + `skills/`，归一化为 `TargetState` |
-| [ ] T2.12 | `plan` 命令 | `src/capnest/commands/plan.py` | 只读；不写任何文件；输出 create/update/unchanged |
+| [x] T2.1 | 解析器 | `src/capnest/deployment/resolver.py` | Profile + 资产 → `DeploymentPlan`；缺失资产报错 |
+| [x] T2.2 | Diff 引擎 | `src/capnest/deployment/diff.py` | 文件级与目录树级 unified diff |
+| [x] T2.7 | Adapter 协议与能力矩阵 | `src/capnest/adapters/base.py` | `TargetCapabilities` / `TargetState` 定义 |
+| [x] T2.8 | mcode 只读 | `src/capnest/adapters/mcode.py` | 读 `config.yaml` + `skills/`，归一化为 `TargetState`；不碰 `.builtin-skills/` |
+| [x] T2.10 | Claude Code 只读 | `src/capnest/adapters/claude_code.py` | 读 `.claude.json` + `skills/`，归一化为 `TargetState` |
+| [x] T2.12 | `plan` 命令 | `src/capnest/commands/plan.py` | 只读；不写任何文件；输出 create/update/unchanged |
 
 **M2a 出口条件**：`plan` 能在真实机器上正确读出两个 Agent 的当前状态并与期望状态比对。
 
@@ -249,17 +249,19 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 
 | # | 任务 | 主要文件 | 验收 |
 | --- | --- | --- | --- |
-| [ ] T2.3 | 归属证明 | `src/capnest/deployment/ownership.py` | 未 claim 的路径拒绝写入；指纹不符视为漂移并拒绝 |
-| [ ] T2.4 | 原子写 + 预写事务 | `src/capnest/deployment/atomic.py` | stage/commit/abort/verify；提交失败自动回滚已提交部分 |
-| [ ] T2.5 | 备份与回滚 | `src/capnest/deployment/backup.py` | 备份已有文件；记录 `created_paths`；还原后逐字节一致 |
-| [ ] T2.6 | 部署状态 | `src/capnest/deployment/state.py` | `DeploymentRecord` 读写；per-target per-phase 状态 |
-| [ ] T2.9 | mcode 写入 | `src/capnest/adapters/mcode.py` | 定点块编辑 `mcpServers`；写前后 diff 校验，预期外变化即中止 |
-| [ ] T2.11 | Claude Code 写入 | `src/capnest/adapters/claude_code.py` | 定点块编辑 `mcpServers`；其余字节逐字保留；写前 mtime 检查 |
-| [ ] T2.13 | `apply` 命令 | `src/capnest/commands/apply.py` | 完整流程：扫描 → 归属 → 事务 → 确认 → 提交 → 记录 |
-| [ ] T2.14 | `status` 命令 | `src/capnest/commands/status.py` | 输出 up-to-date / drift / version-lag / never-deployed / failed |
-| [ ] T2.15 | `rollback` 命令 | `src/capnest/commands/rollback.py` | 还原 + 删除新建路径 + 移除记录 + 释放 claim |
-| [ ] T2.16 | `doctor` 完整版 | `src/capnest/commands/doctor.py` | Agent 路径、CLI 版本、能力矩阵、symlink 可用性 |
-| [ ] T2.17 | Golden fixture 测试 | `tests/test_mcode_adapter.py`, `test_claude_adapter.py` | 读样本 → 归一化 → 写回 → 除目标键外逐字节不变 |
+| [x] T2.3 | 归属证明 | `src/capnest/deployment/ownership.py` | 未 claim 的路径拒绝写入；指纹不符视为漂移并拒绝 |
+| [x] T2.4 | 原子写 + 预写事务 | `src/capnest/deployment/atomic.py` | stage/commit/abort/verify；提交失败自动回滚已提交部分 |
+| [x] T2.5 | 备份与回滚 | `src/capnest/deployment/backup.py` | 备份已有文件；记录 `created_paths`；还原后逐字节一致 |
+| [x] T2.6 | 部署状态 | `src/capnest/deployment/state.py` | `DeploymentRecord` 读写；per-target per-phase 状态 |
+| [ ] T2.9 | mcode 写入 MCP 段（**推迟到第二刀**） | `src/capnest/adapters/mcode.py` | 定点块编辑 `mcpServers`；写前后 diff 校验，预期外变化即中止 |
+| [ ] T2.11 | Claude Code 写入 MCP 段（**推迟到第二刀**） | `src/capnest/adapters/claude_code.py` | 定点块编辑 `mcpServers`；其余字节逐字保留；写前 mtime 检查 |
+| [x] T2.13 | `apply` 命令 | `src/capnest/commands/apply.py` | 完整流程：扫描 → 归属 → 事务 → 确认 → 提交 → 记录 |
+| [x] T2.14 | `status` 命令 | `src/capnest/commands/status.py` | 输出 up-to-date / drift / version-lag / never-deployed / failed |
+| [x] T2.15 | `rollback` 命令 | `src/capnest/commands/rollback.py` | 还原 + 删除新建路径 + 移除记录 + 释放 claim |
+| [x] T2.16 | `doctor` 完整版 | `src/capnest/commands/doctor.py` | Agent 路径、CLI 版本、能力矩阵、symlink 可用性 |
+| [x] T2.17 | Golden fixture 与端到端测试 | `tests/test_adapters.py`, `tests/test_deployment.py`, `tests/test_cli_e2e.py` | 读样本 → 归一化 → 断言 `TargetState`；写回后除目标键外逐字节不变 |
+
+**T2.9 / T2.11 推迟到第二刀**：这两项是 MCP Server 的写入路径，而第一刀的资产类型只有 Skill、不写任何 Agent 共享配置文件。编号保留，配套的实测 T0.10 / T0.11 同样在第二刀做。
 
 **M2 出口条件**：M2 验收命令全部通过；两个 Agent 侧实际生效；打 tag `m2-deployment`。
 
