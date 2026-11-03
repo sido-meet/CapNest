@@ -1,0 +1,57 @@
+[project]
+name = "capnest"
+version = "0.1.0.dev0"
+description = "Personal Capability Infrastructure：个人积累的 AI 能力独立于 Agent 存在，一次维护，跨 Agent 部署出完全相同的一份能力"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.8",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+capnest = "capnest.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/capnest"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+# ruff 0.17 会重排 Markdown 里的 Python 代码块；文档里的对齐注释是有意排的，排除掉。
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# RUF001/002/003 会把全角标点与中文标成可疑字符；本项目的文档与提示里满是中文。
+# B008：typer 的参数声明就是 `x: T = typer.Option(...)`，这是框架的写法，不是可变默认值。
+ignore = ["RUF001", "RUF002", "RUF003", "B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["capnest"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "e2e: 端到端命令行测试",
+]
