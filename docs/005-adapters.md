@@ -241,17 +241,45 @@ class Adapter(Protocol):
 
 写入 `config.toml` 必须用 `tomlkit` 做文档级编辑：`tomllib` 只读，普通 `toml` 会重排格式，只有 tomlkit 能 round-trip 用户手写的注释。
 
-## M0 必须完成的三项实测
-
-这三条是 Adapter 规格的证据来源，也是 M2 风险的直接来源。**不完成不要进入 M2。**
-
-| # | 实测 | 目的 | 产出 |
-| --- | --- | --- | --- |
-| 1 | 分别用 `mcode` 与 `claude` 自己的 CLI 安装同一个 skill 与一个 MCP server | 抓取两份目标配置文件的**真实样本** | `tests/fixtures/mcode_config.yaml`、`tests/fixtures/claude.json` |
-| 2 | 确认 mcode 的 `config.yaml` 与 Claude Code 的 `.claude.json` 在「两个工具同时写」时的合并与冲突规则 | 弄清共享配置的合并语义 | 本文的补遗 + fixture 样本 |
-| 3 | 确认 mcode 用户级 MCP 配置的落点（`config.yaml` 的 `mcpServers` 段，或独立的 `mcp.json`） | 决定 MCP Adapter 写哪里 | MCP 落点的结论 |
+## M0 的实测
 
 实测脚本放在 `scripts/phase0_probe.ps1`，**必须用沙箱化的环境变量指向临时目录**，不得触碰真实配置。
+
+脚本分两阶段：
+
+- **阶段 A · 只读观测**：读两个目标的 home、配置文件与 skills 目录，抽取顶层键与 frontmatter 键。
+- **阶段 B · 沙箱验证**：把 `MINIMAX_DATA_DIR` / `CLAUDE_CONFIG_DIR` 指向临时目录后运行两个 CLI，确认它们可用且不污染真实目录。
+
+| # | 实测 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| T0.9 | 两个目标的 skills 落点与配置目录 | ✅ M0 完成 | `tests/fixtures/target_report.json`、`tests/fixtures/mcode_config.yaml`、`tests/fixtures/skill/SKILL.md` |
+| T0.10 | 两个工具同时写同一配置时的合并规则 | 推迟到第二刀 | — |
+| T0.11 | mcode 用户级 MCP 配置的落点 | 推迟到第二刀 | — |
+
+T0.10 与 T0.11 的结论只影响 MCP 写入路径，而第一刀的资产类型只有 Skill、不写任何 Agent 共享配置文件。现在做它们只能得到一份与 Skill 无关的结论，因此推迟到第二刀，编号保留。
+
+### T0.9 的实测结论
+
+| 观察项 | mcode | Claude Code |
+| --- | --- | --- |
+| home | `~/.minimax` | `~/.claude` |
+| 用户配置 | `~/.minimax/config.yaml` | `~/.claude.json`（**在 home 的上一级**，不在 `.claude/` 里） |
+| skills 落点 | `~/.minimax/skills/` | `~/.claude/skills/` |
+| 沙箱环境变量 | `MINIMAX_DATA_DIR` | `CLAUDE_CONFIG_DIR` |
+| CLI 版本 | 0.6.2 | 2.1.312 |
+
+配置文件的顶层键：
+
+- mcode `config.yaml`：`logLevel`、`defaultModel`、`dataContribution`、`memory`、`provider`、`permissionMode`——**没有 `mcpServers` 段**（用户尚未配置过 MCP，这不构成结论，见 T0.11）。
+- Claude Code `.claude.json`：实测样本的顶层键读取为空（该文件由 CLI 高频写入，键集合随运行状态变化），这印证了「不整体重写」的设计要求。
+
+skill frontmatter 的键：
+
+- mcode：`name`、`description`、`descriptions`、`displayNames`。
+- Claude Code：`name`、`description`，另有部分 skill 带 `license`。
+- 两者共同点是 **`name` + `description` 必需**，其余键原样保留。
+
+**嵌套目录普遍存在**：实测的 26 个 Claude Code skill 中，多数在顶层目录下还有子目录（如 `ai-research-skills/0-autoresearch-skill/SKILL.md`），mcode 的 `manim` 亦然。这印证了 [010 §9](010-minimal-implementation.md) 的止损线——**第一刀只支持单层 skill 目录，检测到嵌套就报 warn 并拒绝覆盖**。
 
 ## 下一个
 

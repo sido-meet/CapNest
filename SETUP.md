@@ -6,10 +6,7 @@
 
 ## 当前状态
 
-仓库处于**设计阶段**：文档已就绪，实现尚未开始。本文分两部分：
-
-- **§1 环境准备**：装好 Python / uv / git，这部分现在就能做。
-- **§2 实现就绪后的流程**：完整的初始化、登记、部署与验证闭环。仓库里还没有 `pyproject.toml`，因此 §2 的每条命令在实现落地前都跑不通——它是实现完成后的操作手册，不是现在就能执行的脚本。
+仓库处于**实现阶段**：M0 工程地基已落地，§2 的命令正在随里程碑逐步可用。当前可用的命令是 `init` 与 `doctor`；`add` / `list` / `search` / `validate` / `profile` 在 M1 之后可用，`plan` / `apply` / `status` / `rollback` 在 M2 之后可用。逐条进度见 [007 Tasks](docs/007-tasks.md)。
 
 ## 1. 环境准备
 
@@ -35,15 +32,15 @@ git clone https://github.com/sido-meet/CapNest.git
 cd CapNest
 ```
 
-### 1.3 安装依赖（实现落地后）
+### 1.3 安装依赖
 
 ```powershell
 uv sync
 ```
 
-`uv sync` 会创建 `.venv` 并按 `pyproject.toml` 锁定依赖。`pyproject.toml` 属于 M0 的第一个任务（见 [007 Tasks](docs/007-tasks.md) 的 T0.1），在那之前这一步没有意义。
+`uv sync` 会创建 `.venv` 并按 `uv.lock` 锁定依赖。
 
-### 1.4 校验安装（实现落地后）
+### 1.4 校验安装
 
 ```powershell
 uv run capnest --version

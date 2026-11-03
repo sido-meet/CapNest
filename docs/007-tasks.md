@@ -45,9 +45,9 @@ M4 收尾          ← 文档对齐、CI、打包
 
 ### M0 · 工程地基
 
-**目标**：一个能跑的 `capnest` 命令、一份确定的工作区布局、以及三项 Adapter 实测。
+**目标**：一个能跑的 `capnest` 命令、一份确定的工作区布局、以及一项 Adapter 实测。
 
-**范围**：项目骨架、依赖管理、配置定位、`init`、`--json` 全局输出通道、错误体系与退出码、`doctor` 骨架；以及 [005 Adapters](005-adapters.md) 末尾的三项实测。
+**范围**：项目骨架、依赖管理、配置定位、`init`、`--json` 全局输出通道、错误体系与退出码、`doctor` 骨架；以及 [005 Adapters](005-adapters.md) 末尾的 skills 落点与配置目录实测。
 
 **不做**：任何资产、Profile、部署逻辑。
 
@@ -174,35 +174,37 @@ git log --oneline | grep -o 'T[0-9]\+\.[0-9]\+' | sort -u
 ```
 T0.1 → T0.2 → T0.5 → T0.6 ─┬─→ T1.1 ─→ T1.2 ─→ T1.6 ─→ T1.7 ─→ T1.10 ─┐
                            │        │                                 │
-                           └─→ T0.9,T0.10,T0.11 (实测，可并行)         │
+                           └─→ T0.9 (实测，可并行)                    │
                                                                           ▼
 T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
         │       │        │        │
         └→ T2.3,T2.4,T2.5,T2.6 (可并行)  T2.9/T2.11 (依赖 T2.3/T2.4)
 ```
 
-**M0 的三项实测（T0.9–T0.11）必须与 M1 的代码工作并行推进**，因为它们的结论可能反过来改 M1 的 Manifest 设计。
+**M0 的实测（T0.9）必须与 M1 的代码工作并行推进**，因为它的结论可能反过来改 M1 的 Manifest 设计。
 
 ### M0 · 工程地基
 
 | # | 任务 | 主要文件 | 验收 |
 | --- | --- | --- | --- |
-| [ ] T0.1 | 项目骨架与依赖锁定 | `pyproject.toml`, `uv.lock` | `uv sync` 成功；`uv run capnest --version` 可执行 |
-| [ ] T0.2 | 包骨架 | `src/capnest/__init__.py`, `__main__.py`, `py.typed` | `python -m capnest --version` 可用 |
-| [ ] T0.3 | 异常体系与退出码映射 | `src/capnest/errors.py` | 8 种错误码全部有对应异常类与退出码 |
-| [ ] T0.4 | JSON 输出协议 | `src/capnest/jsonout.py` | 成功/失败 envelope 结构符合 [006 CLI](006-cli.md) 的协议 |
-| [ ] T0.5 | Typer 装配 + 全局选项 | `src/capnest/cli.py` | `--json` / `--workspace` / `--no-color` 全局生效；`--help` 分层清晰 |
-| [ ] T0.6 | 工作区定位 + `init` | `src/capnest/config.py`, `store/workspace.py`, `commands/init.py` | `capnest init ./ws` 生成完整骨架；重复 init 退出码 7 |
-| [ ] T0.7 | `doctor` 骨架 | `src/capnest/commands/doctor.py` | 检查 Python 版本与工作区；`--json` 结构符合 [006 CLI](006-cli.md) |
-| [ ] T0.8 | 代码风格与 CI 骨架 | `.editorconfig`, `pyproject.toml`（ruff）, `.github/workflows/ci.yml` | `ruff check` / `ruff format --check` 通过；CI 只跑 lint |
-| [ ] T0.9 | **实测 #1**：双目标部署样本 | `scripts/phase0_probe.ps1`, `tests/fixtures/mcode_config.yaml`, `tests/fixtures/claude.json` | 抓到的样本与 [005 Adapters](005-adapters.md) 的格式一致或记录差异 |
-| [ ] T0.10 | **实测 #2**：配置合并语义 | `docs/005-adapters.md`（补遗） | 明确回答「两个工具同时写同一配置时的合并规则」 |
-| [ ] T0.11 | **实测 #3**：mcode 用户级 MCP 落点 | `docs/005-adapters.md`（结论） | 确认 MCP 写 `config.yaml` 的 `mcpServers` 段还是独立的 `mcp.json` |
+| [x] T0.1 | 项目骨架与依赖锁定 | `pyproject.toml`, `uv.lock` | `uv sync` 成功；`uv run capnest --version` 可执行 |
+| [x] T0.2 | 包骨架 | `src/capnest/__init__.py`, `__main__.py`, `py.typed` | `python -m capnest --version` 可用 |
+| [x] T0.3 | 异常体系与退出码映射 | `src/capnest/errors.py` | 8 种错误码全部有对应异常类与退出码 |
+| [x] T0.4 | JSON 输出协议 | `src/capnest/jsonout.py` | 成功/失败 envelope 结构符合 [006 CLI](006-cli.md) 的协议 |
+| [x] T0.5 | Typer 装配 + 全局选项 | `src/capnest/cli.py` | `--json` / `--workspace` / `--no-color` 全局生效；`--help` 分层清晰 |
+| [x] T0.6 | 工作区定位 + `init` | `src/capnest/config.py`, `store/workspace.py`, `commands/init.py` | `capnest init ./ws` 生成完整骨架；重复 init 退出码 7 |
+| [x] T0.7 | `doctor` 骨架 | `src/capnest/commands/doctor.py` | 检查 Python 版本与工作区；`--json` 结构符合 [006 CLI](006-cli.md) |
+| [x] T0.8 | 代码风格与 CI 骨架 | `.editorconfig`, `pyproject.toml`（ruff）, `.github/workflows/ci.yml` | `ruff check` / `ruff format --check` 通过；CI 只跑 lint |
+| [x] T0.9 | **实测 #1**：两个目标的 skills 落点与配置目录 | `scripts/phase0_probe.ps1`, `tests/fixtures/target_report.json`, `tests/fixtures/mcode_config.yaml`, `tests/fixtures/skill/SKILL.md` | 抓到的样本与 [005 Adapters](005-adapters.md) 的格式一致或记录差异 |
+| [ ] T0.10 | **实测 #2**：配置合并语义（**推迟到第二刀**） | `docs/005-adapters.md`（补遗） | 明确回答「两个工具同时写同一配置时的合并规则」——依赖 MCP 写入场景 |
+| [ ] T0.11 | **实测 #3**：mcode 用户级 MCP 落点（**推迟到第二刀**） | `docs/005-adapters.md`（结论） | 确认 MCP 写 `config.yaml` 的 `mcpServers` 段还是独立的 `mcp.json` |
 | [x] T0.12 | 命名空间与格式词表定稿 | `docs/001`, `docs/002` | `io.capnest.capability/v1alpha1`；`mcp.local-config` / `mcp.registry-server-json` 拆分；`io.capnest.workflow/v1alpha1` |
 
 **T0.12 是破坏性变更**，但 v1 未发布，此刻改零成本。**必须在 M1 写代码之前完成**，否则模型字段要返工。
 
-**M0 出口条件**：`uv run capnest --json init ./ws` 与 `uv run capnest doctor --json` 均通过；T0.9–T0.11 三项实测有书面结论；打 tag `m0-foundation`。
+**M0 出口条件**：`uv run capnest --json init ./ws` 与 `uv run capnest doctor --json` 均通过；T0.9 实测有书面结论；打 tag `m0-foundation`。
+
+**T0.10 / T0.11 推迟到第二刀**：这两项实测的结论只影响 MCP 写入路径，而第一刀的资产类型只有 Skill、不写任何 Agent 共享配置文件。现在做它们只能得到一份「与 Skill 无关」的结论，因此推迟到 MCP 真正要落地时再做，编号保留。
 
 ### M1 · 资产层
 

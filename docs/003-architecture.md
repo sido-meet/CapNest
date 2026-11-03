@@ -31,13 +31,14 @@
 | `pydantic` | ≥2.7 | 数据模型与校验 |
 | `pyyaml` | ≥6.0 | Manifest / Profile / Lockfile |
 | `tomlkit` | ≥0.13 | TOML **无损**读写（v0.2 的 Codex Adapter 才需要，v1 不引入） |
-| `platformdirs` | ≥4 | 定位 Agent 配置目录 |
 
 **标准库够用、不引入**：`hashlib`、`difflib`、`shutil`、`tomllib`（只读探测）、`json`、`unicodedata`、`sqlite3`（v1 不用）。
 
 **开发依赖**：`pytest`、`pytest-cov`、`ruff`。
 
 v1 不引入 TOML 依赖：两个目标的配置分别是 YAML 与 JSON，用 `pyyaml` 与标准库 `json` 即可。Codex Adapter 落在 v0.2，届时再引入 `tomlkit`——Codex 的 `config.toml` 里有大量注释与手写格式，`tomllib` 只读、普通 `toml` 会重排格式，只有 tomlkit 能 round-trip。
+
+**也不引入 `platformdirs`**：两个目标的 home 位置是已知的（`~/.minimax` 与 `~/.claude`），且可用 `CAPNEST_TARGET_HOME_<TARGET>` 覆盖，`Path.home()` 就够用。
 
 ## 分层
 
@@ -106,6 +107,8 @@ CapNest/
 ├── .gitattributes
 ├── .gitignore
 ├── .editorconfig
+├── .python-version
+├── .github/workflows/ci.yml
 │
 ├── docs/
 │   ├── 000-philosophy.md … 010-minimal-implementation.md

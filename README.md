@@ -4,7 +4,17 @@
 
 个人积累的 AI 能力（MCP Server / Skill / Workflow）独立于 Agent 存在，以版本化的 Profile 组合，一次部署到多个 Agent，得到**完全相同的一份能力**。
 
-> 当前处于设计阶段：文档先行，实现按 [任务清单](docs/007-tasks.md) 逐条推进。
+> 当前处于实现阶段：M0 工程地基已落地，M1 资产层与 M2 部署层按 [任务清单](docs/007-tasks.md) 逐条推进。
+
+## Quick start
+
+```powershell
+uv sync
+uv run capnest init .\workspace
+uv run capnest --workspace .\workspace doctor
+```
+
+全局选项放在子命令之前（`capnest --workspace ./ws --json <命令>`）。完整命令规格见 [006 CLI](docs/006-cli.md)。
 
 ## Setup
 
