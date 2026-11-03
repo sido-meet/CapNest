@@ -1,0 +1,306 @@
+{
+  "generatedAt": "2026-11-03T15:21:35.5793270Z",
+  "phaseA": [
+    {
+      "target": "mcode",
+      "home": "C:\\Users\\Administrator\\.minimax",
+      "homeExists": true,
+      "configFile": "C:\\Users\\Administrator\\.minimax\\config.yaml",
+      "configExists": true,
+      "configTopLevelKeys": [
+        "logLevel",
+        "defaultModel",
+        "dataContribution",
+        "memory",
+        "provider",
+        "permissionMode"
+      ],
+      "skillsPath": "C:\\Users\\Administrator\\.minimax\\skills",
+      "skills": [
+        {
+          "name": "manim",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "descriptions",
+            "displayNames"
+          ]
+        }
+      ],
+      "sandboxEnv": "MINIMAX_DATA_DIR"
+    },
+    {
+      "target": "claude-code",
+      "home": "C:\\Users\\Administrator\\.claude",
+      "homeExists": true,
+      "configFile": "C:\\Users\\Administrator\\.claude.json",
+      "configExists": true,
+      "configTopLevelKeys": [],
+      "skillsPath": "C:\\Users\\Administrator\\.claude\\skills",
+      "skills": [
+        {
+          "name": "access-sido-meet",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "ai-research-skills",
+          "has_skill_md": false,
+          "nested": true,
+          "frontmatterKeys": []
+        },
+        {
+          "name": "algorithmic-art",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "brand-guidelines",
+          "has_skill_md": true,
+          "nested": false,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "canvas-design",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "claude-api",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "doc-coauthoring",
+          "has_skill_md": true,
+          "nested": false,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "docx",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "frontend-design",
+          "has_skill_md": true,
+          "nested": false,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "hv-analysis",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "internal-comms",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "kwai",
+          "has_skill_md": true,
+          "nested": false,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "manage-site-content",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "mcp-builder",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "paper-rebuttal-tips",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "paper-write-skill",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "paper-write-skill-workspace",
+          "has_skill_md": false,
+          "nested": true,
+          "frontmatterKeys": []
+        },
+        {
+          "name": "pdf",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "pptx",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "publish-site-content",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "skill-creator",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description"
+          ]
+        },
+        {
+          "name": "slack-gif-creator",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "theme-factory",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "web-artifacts-builder",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "webapp-testing",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        },
+        {
+          "name": "xlsx",
+          "has_skill_md": true,
+          "nested": true,
+          "frontmatterKeys": [
+            "name",
+            "description",
+            "license"
+          ]
+        }
+      ],
+      "sandboxEnv": "CLAUDE_CONFIG_DIR"
+    }
+  ],
+  "phaseB": [
+    {
+      "cli": "mcode",
+      "exitCode": 0,
+      "version": "0.6.2",
+      "homeEntriesCreated": [],
+      "sandboxRoot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\capnest-probe-487667c69e9a4993a5487dcf28cd7923"
+    },
+    {
+      "cli": "claude",
+      "exitCode": 0,
+      "version": "2.1.312 (Claude Code)",
+      "homeEntriesCreated": [],
+      "sandboxRoot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\capnest-probe-487667c69e9a4993a5487dcf28cd7923"
+    }
+  ]
+}
