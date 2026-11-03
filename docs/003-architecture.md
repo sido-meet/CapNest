@@ -151,6 +151,7 @@ CapNest/
 │       │   ├── __init__.py
 │       │   ├── resolver.py       # Profile → DeploymentPlan
 │       │   ├── diff.py           # unified diff 计算
+│       │   ├── planning.py       # plan 与 apply 共用的计划计算
 │       │   ├── atomic.py         # 原子写 + 预写事务 + 指纹校验
 │       │   ├── ownership.py      # 归属证明
 │       │   ├── backup.py         # 备份 / 回滚
@@ -159,6 +160,7 @@ CapNest/
 │       ├── adapters/             # Agent 适配层
 │       │   ├── __init__.py       # Adapter 注册表
 │       │   ├── base.py           # Adapter 协议 + 能力矩阵
+│       │   ├── skills_only.py    # skills 目录 Adapter 基类
 │       │   ├── mcode.py
 │       │   └── claude_code.py
 │       │
@@ -182,25 +184,22 @@ CapNest/
 │   ├── test_models.py
 │   ├── test_assets.py
 │   ├── test_profiles.py
-│   ├── test_resolver.py
-│   ├── test_diff.py
-│   ├── test_atomic.py
-│   ├── test_backup.py
 │   ├── test_scan.py
-│   ├── test_mcode_adapter.py
-│   ├── test_claude_adapter.py
-│   └── test_cli_e2e.py
+│   ├── test_validation.py
+│   ├── test_adapters.py
+│   ├── test_deployment.py
+│   ├── test_cli_e2e.py
+│   ├── test_cli_m1.py
 │
 ├── examples/
 │   └── data-agent/               # 008 Acceptance 的首个演示项目
-│       ├── assets/
-│       │   ├── skills/sql-analysis/{capability.yaml, SKILL.md}
-│       │   ├── mcp/database/{capability.yaml, server.json}
-│       │   └── workflows/data-diagnosis/{capability.yaml, workflow.yaml}
-│       └── profiles/data-agent.yaml
+│       └── assets/
+│           └── skills/sql-analysis/{capability.yaml, SKILL.md}
 │
 └── scripts/
-    └── phase0_probe.ps1          # M0 三项实测的脚本
+    ├── phase0_probe.ps1          # M0 实测的脚本
+    ├── sandbox_e2e.ps1           # 沙箱验收：两个目标都指向临时目录
+    └── real_smoke_test.ps1       # 真实目录受控冒烟：部署 → 校验 → 回滚
 ```
 
 ## 数据模型

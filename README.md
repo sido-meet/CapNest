@@ -14,6 +14,11 @@ uv run capnest init .\workspace
 uv run capnest --workspace .\workspace doctor
 uv run capnest --workspace .\workspace add skill examples\data-agent\assets\skills\sql-analysis
 uv run capnest --workspace .\workspace list
+uv run capnest --workspace .\workspace profile create data-agent --asset skills/sql-analysis
+uv run capnest --workspace .\workspace plan   --profile data-agent --target mcode,claude-code
+uv run capnest --workspace .\workspace apply  --profile data-agent --target mcode,claude-code --yes
+uv run capnest --workspace .\workspace status
+uv run capnest --workspace .\workspace rollback --target mcode
 ```
 
 全局选项放在子命令之前（`capnest --workspace ./ws --json <命令>`）。完整命令规格见 [006 CLI](docs/006-cli.md)。
