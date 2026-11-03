@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-仓库处于**实现阶段**：M0 工程地基已落地，§2 的命令正在随里程碑逐步可用。当前可用的命令是 `init` 与 `doctor`；`add` / `list` / `search` / `validate` / `profile` 在 M1 之后可用，`plan` / `apply` / `status` / `rollback` 在 M2 之后可用。逐条进度见 [007 Tasks](docs/007-tasks.md)。
+仓库处于**实现阶段**：M0 工程地基与 M1 资产层已落地。当前可用的命令是 `init` / `doctor` / `add` / `list` / `search` / `validate` / `profile`；`plan` / `apply` / `status` / `rollback` 在 M2 之后可用。逐条进度见 [007 Tasks](docs/007-tasks.md)。
 
 ## 1. 环境准备
 
@@ -94,7 +94,7 @@ uv run capnest --workspace .\workspace add workflow .\my-workflows\data-diagnosi
 uv run capnest --workspace .\workspace add --from mcode:manim
 ```
 
-登记前会做隐藏 Unicode 扫描，命中即阻断。
+登记前会做隐藏 Unicode 扫描，命中即阻断（退出码 6）。源目录已有 `capability.yaml` 时校验它，没有则自动生成一份最小 manifest（`version` 默认 `0.1.0`）。
 
 ### 2.4 组合与锁定
 

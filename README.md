@@ -12,6 +12,8 @@
 uv sync
 uv run capnest init .\workspace
 uv run capnest --workspace .\workspace doctor
+uv run capnest --workspace .\workspace add skill examples\data-agent\assets\skills\sql-analysis
+uv run capnest --workspace .\workspace list
 ```
 
 全局选项放在子命令之前（`capnest --workspace ./ws --json <命令>`）。完整命令规格见 [006 CLI](docs/006-cli.md)。

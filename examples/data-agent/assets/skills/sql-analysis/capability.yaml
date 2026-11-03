@@ -1,0 +1,12 @@
+apiVersion: io.capnest.capability/v1alpha1
+kind: Capability
+metadata:
+  id: skills/sql-analysis
+  name: SQL Analysis
+  version: 1.0.0
+  description: 分析 SQL 查询并解释执行计划
+spec:
+  type: skill
+  format: agentskills.io
+  entrypoint: ./SKILL.md
+

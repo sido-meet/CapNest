@@ -15,7 +15,7 @@ from capnest.config import (
     load_config,
     save_config,
 )
-from capnest.context import AppContext
+from capnest.context import AppContext, use_json
 from capnest.errors import Conflict
 from capnest.store.workspace import Workspace
 
@@ -24,10 +24,12 @@ def init(
     ctx: typer.Context,
     path: Path = typer.Argument(Path("."), help="工作区根目录"),
     force: bool = typer.Option(False, "--force", help="已初始化时仍然覆盖配置"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """创建工作区骨架与 `config.yaml`。"""
     context: AppContext = ctx.obj
     context.output.command = "init"
+    use_json(context, json_)
 
     root = path.expanduser().resolve()
     workspace = Workspace(root)

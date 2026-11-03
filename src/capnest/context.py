@@ -87,3 +87,26 @@ def workspace_of(context: AppContext) -> Workspace:
 
         context.workspace = resolve_workspace(None)
     return Workspace(context.workspace)
+
+
+def ready_workspace(context: AppContext) -> Workspace:
+    """解析工作区并确认它**已经初始化**。
+
+    除 `init` 外的所有命令都走这里：工作区不存在或没有 `config.yaml`
+    一律报 NOT_FOUND（退出码 8），而不是在半个工作区上继续操作。
+    """
+    from capnest.config import require_initialized
+
+    workspace = workspace_of(context)
+    require_initialized(workspace.root)
+    return workspace
+
+
+def use_json(context: AppContext, flag: bool) -> None:
+    """命令级的 `--json` 打开 JSON 输出。
+
+    `--json` 是全局选项（放在子命令之前），但 `capnest list --json` 也是
+    极常见的写法——两种都支持，命令级的开关优先级更高。
+    """
+    if flag:
+        context.output.json_mode = True
