@@ -1,0 +1,28 @@
+# CapNest 运行状态与本地数据
+state/
+backups/
+*.db
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 环境
+.env
+.env.*
+!.env.example
