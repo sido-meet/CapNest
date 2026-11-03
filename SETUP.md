@@ -79,8 +79,8 @@ uv run capnest add skill   .\my-skills\sql-analysis
 uv run capnest add mcp     .\my-mcps\database
 uv run capnest add workflow .\my-workflows\data-diagnosis
 
-# 从 Codex 侧收编既有 skill，原文件保持不动
-uv run capnest add --from codex:paper-write-skill
+# 从 mcode 侧收编既有 skill，原文件保持不动
+uv run capnest add --from mcode:manim
 ```
 
 登记前会做隐藏 Unicode 扫描，命中即阻断。
@@ -88,7 +88,7 @@ uv run capnest add --from codex:paper-write-skill
 ### 2.4 组合与锁定
 
 ```powershell
-uv run capnest profile create data-agent --target codex --target claude-code
+uv run capnest profile create data-agent --target mcode --target claude-code
 ```
 
 编辑 `profiles/data-agent.yaml` 填入 `spec.components`，然后校验：
@@ -100,7 +100,7 @@ uv run capnest validate
 ### 2.5 预览部署
 
 ```powershell
-uv run capnest plan --profile data-agent --target codex,claude-code
+uv run capnest plan --profile data-agent --target mcode,claude-code
 ```
 
 `plan` 是只读的，不写任何文件。
@@ -108,20 +108,20 @@ uv run capnest plan --profile data-agent --target codex,claude-code
 ### 2.6 应用与验证
 
 ```powershell
-uv run capnest apply --profile data-agent --target codex,claude-code
+uv run capnest apply --profile data-agent --target mcode,claude-code
 uv run capnest status
 ```
 
 ### 2.7 回滚
 
 ```powershell
-uv run capnest rollback --target codex
+uv run capnest rollback --target mcode
 ```
 
 ## 3. 让 Agent 帮你完成
 
 `capnest` 的 `--json` 输出是一份稳定协议，GUI 与 Agent 都依赖它。因此可以直接让 Agent 操作：
 
-> 用 `capnest --json` 把我的 `sql-analysis` skill 部署到 Codex 和 Claude Code，先给我看 plan。
+> 用 `capnest --json` 把我的 `sql-analysis` skill 部署到 mcode 和 Claude Code，先给我看 plan。
 
 `--json` 的字段约定见 [006 CLI](docs/006-cli.md)。

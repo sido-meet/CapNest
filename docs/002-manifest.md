@@ -151,7 +151,7 @@ spec:
     - ref: mcp/database
 
   targets:
-    - codex
+    - mcode
     - claude-code
 ```
 
@@ -207,7 +207,7 @@ spec:
 
 - [ ] `permissions` 的权限类别词表
 - [ ] Workflow 的 `workflow.yaml` 最小描述格式
-- [ ] 是否支持更细粒度的 `compatibility`（如 `codex@0.9`）
+- [ ] 是否支持更细粒度的 `compatibility`（如 `mcode@0.6`）
 
 ## 下一个
 

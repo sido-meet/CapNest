@@ -8,7 +8,7 @@
 
 第一版不是「功能多一点的 Alpha」，而是**一个具体问题被完整解决**：
 
-> 我在 Codex 和 Claude Code 之间来回用，同一套 Skill 和 MCP Server 却要维护两份。CapNest 让这两份变成一份：改一处、两边同步；同步前能看到差异；出了问题能一键还原。
+> 我在 mcode 和 Claude Code 之间来回用，同一套 Skill 和 MCP Server 却要维护两份。CapNest 让这两份变成一份：改一处、两边同步；同步前能看到差异；出了问题能一键还原。
 
 **完成的标志**：一个 Profile 部署到两个 Agent，两边能力一致；改资产 → 看到 diff → 应用 → 两边同步；出问题 → 回滚还原。每一步都能独立验证。
 
@@ -21,7 +21,7 @@
 | **砍功能，不砍闭环** | 功能少可以，链路必须完整 | 导入 → 组合 → 预览 → 应用 → 检查 → 回滚，六步一个都不能断 |
 | **砍自动化，不砍可验证性** | 不做智能决策，但每一步都能人工确认 | 不自动选版本，但每个决策都能 `plan` 出来看 |
 | **砍存储，不砍正确性** | 不引入数据库，用文件 | 状态用 JSON 文件，索引直接扫目录 |
-| **砍范围，不砍边界** | 只支持少数目标，但每个都做对 | 只做 Codex + Claude Code，但配置读写做到无损 round-trip |
+| **砍范围，不砍边界** | 只支持少数目标，但每个都做对 | 只做 mcode + Claude Code，但配置读写做到无损 round-trip |
 
 ## 里程碑与排序
 
@@ -75,7 +75,7 @@ uv run capnest doctor --json
 uv run capnest add skill examples/data-agent/assets/skills/sql-analysis
 uv run capnest add mcp   examples/data-agent/assets/mcp/database
 uv run capnest add workflow examples/data-agent/assets/workflows/data-diagnosis
-uv run capnest add --from codex:paper-write-skill     # 收编既有资产
+uv run capnest add --from mcode:manim                  # 收编既有资产
 uv run capnest list --json
 uv run capnest search "SQL"
 uv run capnest validate          # 退出码 0
@@ -84,17 +84,17 @@ uv run capnest profile create data-agent
 
 ### M2 · 部署层
 
-**目标**：把 Profile 部署到 Codex 和 Claude Code，可预览、可应用、可回滚。
+**目标**：把 Profile 部署到 mcode 和 Claude Code，可预览、可应用、可回滚。
 
 **范围**：解析器、Diff 引擎、归属证明、原子写与预写事务、备份与回滚、部署状态、两个 Adapter、五个命令（`plan` `apply` `status` `rollback` `doctor`）。
 
 **验收**：
 
 ```bash
-uv run capnest plan   --profile data-agent --target codex,claude-code
-uv run capnest apply  --profile data-agent --target codex,claude-code
+uv run capnest plan   --profile data-agent --target mcode,claude-code
+uv run capnest apply  --profile data-agent --target mcode,claude-code
 uv run capnest status --json
-uv run capnest rollback --target codex
+uv run capnest rollback --target mcode
 ```
 
 ### M3 · 闭环加固
@@ -121,7 +121,7 @@ main                    只接受来自 feature/* 的 PR，始终可运行
   └─ feature/mN-<slug>     每个里程碑一个或多个功能分支
 ```
 
-- 分支命名：`feature/m1-asset-registry`、`feature/m2-codex-adapter`
+- 分支命名：`feature/m1-asset-registry`、`feature/m2-mcode-adapter`
 - **不直接推 main**，所有变更走 PR
 - PR 关闭对应的一个或多个任务，PR 描述里勾选任务清单
 
@@ -133,14 +133,14 @@ Conventional Commits，scope 用里程碑号或模块名：
 <type>(<scope>): <subject>
 
 type: feat | fix | docs | test | refactor | chore | perf
-scope: m0 | m1 | m2 | m3 | m4 | store | adapter-codex | cli | security
+scope: m0 | m1 | m2 | m3 | m4 | store | adapter-mcode | cli | security
 ```
 
 示例：
 
 ```
 feat(m1): [T1.07] 实现资产导入与目录规范化哈希
-feat(m2): [T2.11] Codex Adapter 写入 mcp_servers 段并保留原有注释
+feat(m2): [T2.11] mcode Adapter 写入 MCP 段并保留原有格式
 fix(m2): [T2.14] tomlkit 写入时保留 config.toml 原有注释
 docs(007): 补充 v1 非目标清单
 ```
@@ -195,9 +195,9 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [ ] T0.6 | 工作区定位 + `init` | `src/capnest/config.py`, `store/workspace.py`, `commands/init.py` | `capnest init ./ws` 生成完整骨架；重复 init 退出码 7 |
 | [ ] T0.7 | `doctor` 骨架 | `src/capnest/commands/doctor.py` | 检查 Python 版本与工作区；`--json` 结构符合 [006 CLI](006-cli.md) |
 | [ ] T0.8 | 代码风格与 CI 骨架 | `.editorconfig`, `pyproject.toml`（ruff）, `.github/workflows/ci.yml` | `ruff check` / `ruff format --check` 通过；CI 只跑 lint |
-| [ ] T0.9 | **实测 #1**：双目标部署样本 | `scripts/phase0_probe.ps1`, `tests/fixtures/codex_config.toml`, `tests/fixtures/claude.json` | 抓到的样本与 [005 Adapters](005-adapters.md) 的格式一致或记录差异 |
+| [ ] T0.9 | **实测 #1**：双目标部署样本 | `scripts/phase0_probe.ps1`, `tests/fixtures/mcode_config.yaml`, `tests/fixtures/claude.json` | 抓到的样本与 [005 Adapters](005-adapters.md) 的格式一致或记录差异 |
 | [ ] T0.10 | **实测 #2**：配置合并语义 | `docs/005-adapters.md`（补遗） | 明确回答「两个工具同时写同一配置时的合并规则」 |
-| [ ] T0.11 | **实测 #3**：Codex plugin.json 支持 | `docs/005-adapters.md`（结论） | 记录 Codex CLI 版本与 plugin 支持情况，确定 plugin 部署形态是否进入 v0.2 |
+| [ ] T0.11 | **实测 #3**：mcode 用户级 MCP 落点 | `docs/005-adapters.md`（结论） | 确认 MCP 写 `config.yaml` 的 `mcpServers` 段还是独立的 `mcp.json` |
 | [x] T0.12 | 命名空间与格式词表定稿 | `docs/001`, `docs/002` | `io.capnest.capability/v1alpha1`；`mcp.local-config` / `mcp.registry-server-json` 拆分；`io.capnest.workflow/v1alpha1` |
 
 **T0.12 是破坏性变更**，但 v1 未发布，此刻改零成本。**必须在 M1 写代码之前完成**，否则模型字段要返工。
@@ -237,7 +237,7 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [ ] T2.1 | 解析器 | `src/capnest/deployment/resolver.py` | Profile + 资产 → `DeploymentPlan`；缺失资产报错 |
 | [ ] T2.2 | Diff 引擎 | `src/capnest/deployment/diff.py` | 文件级与目录树级 unified diff |
 | [ ] T2.7 | Adapter 协议与能力矩阵 | `src/capnest/adapters/base.py` | `TargetCapabilities` / `TargetState` 定义 |
-| [ ] T2.8 | Codex 只读 | `src/capnest/adapters/codex.py` | 读 `config.toml` + `skills/`，归一化为 `TargetState` |
+| [ ] T2.8 | mcode 只读 | `src/capnest/adapters/mcode.py` | 读 `config.yaml` + `skills/`，归一化为 `TargetState`；不碰 `.builtin-skills/` |
 | [ ] T2.10 | Claude Code 只读 | `src/capnest/adapters/claude_code.py` | 读 `.claude.json` + `skills/`，归一化为 `TargetState` |
 | [ ] T2.12 | `plan` 命令 | `src/capnest/commands/plan.py` | 只读；不写任何文件；输出 create/update/unchanged |
 
@@ -251,13 +251,13 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [ ] T2.4 | 原子写 + 预写事务 | `src/capnest/deployment/atomic.py` | stage/commit/abort/verify；提交失败自动回滚已提交部分 |
 | [ ] T2.5 | 备份与回滚 | `src/capnest/deployment/backup.py` | 备份已有文件；记录 `created_paths`；还原后逐字节一致 |
 | [ ] T2.6 | 部署状态 | `src/capnest/deployment/state.py` | `DeploymentRecord` 读写；per-target per-phase 状态 |
-| [ ] T2.9 | Codex 写入 | `src/capnest/adapters/codex.py` | tomlkit upsert `[mcp_servers.X]`；写前后 diff 校验，预期外变化即中止 |
+| [ ] T2.9 | mcode 写入 | `src/capnest/adapters/mcode.py` | 定点块编辑 `mcpServers`；写前后 diff 校验，预期外变化即中止 |
 | [ ] T2.11 | Claude Code 写入 | `src/capnest/adapters/claude_code.py` | 定点块编辑 `mcpServers`；其余字节逐字保留；写前 mtime 检查 |
 | [ ] T2.13 | `apply` 命令 | `src/capnest/commands/apply.py` | 完整流程：扫描 → 归属 → 事务 → 确认 → 提交 → 记录 |
 | [ ] T2.14 | `status` 命令 | `src/capnest/commands/status.py` | 输出 up-to-date / drift / version-lag / never-deployed / failed |
 | [ ] T2.15 | `rollback` 命令 | `src/capnest/commands/rollback.py` | 还原 + 删除新建路径 + 移除记录 + 释放 claim |
 | [ ] T2.16 | `doctor` 完整版 | `src/capnest/commands/doctor.py` | Agent 路径、CLI 版本、能力矩阵、symlink 可用性 |
-| [ ] T2.17 | Golden fixture 测试 | `tests/test_codex_adapter.py`, `test_claude_adapter.py` | 读样本 → 归一化 → 写回 → 除目标键外逐字节不变 |
+| [ ] T2.17 | Golden fixture 测试 | `tests/test_mcode_adapter.py`, `test_claude_adapter.py` | 读样本 → 归一化 → 写回 → 除目标键外逐字节不变 |
 
 **M2 出口条件**：M2 验收命令全部通过；两个 Agent 侧实际生效；打 tag `m2-deployment`。
 

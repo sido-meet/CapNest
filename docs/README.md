@@ -26,7 +26,7 @@
 | --- | --- |
 | 能力（Capability） | 可被 Agent 复用的资产单元，泛指 MCP Server / Skill / Workflow |
 | Profile | 多个能力的组合，是部署的单位 |
-| Target | 部署目标 Agent，如 `codex`、`claude-code` |
+| Target | 部署目标 Agent，如 `mcode`、`claude-code` |
 | Lockfile | 记录资产及其依赖的确切版本，保证跨 Agent 部署一致 |
 | 漂移（drift） | Agent 侧配置被外部修改，与 CapNest 记录不一致 |
 | 版本落后（version lag） | `assets/` 中的资产已更新，尚未重新部署 |

@@ -6,7 +6,7 @@ CapNest 的核心主张：
 
 ## 要解决的问题
 
-今天每个 Agent 都有自己的 Skill、MCP、Plugin 和配置管理机制：Codex 有自己的一套，Claude Code 有自己的一套，其他 Agent 也各有各的。于是使用多个 Agent 的人只能在每个 Agent 里重复配置、复制和维护同一批能力。
+今天每个 Agent 都有自己的 Skill、MCP、Plugin 和配置管理机制：MiniMax Code 有自己的一套，Claude Code 有自己的一套，其他 Agent 也各有各的。于是使用多个 Agent 的人只能在每个 Agent 里重复配置、复制和维护同一批能力。
 
 这些能力本质上属于用户，却被托管在某个 Agent 的配置目录里。换个 Agent、换个机器，就要重建一遍。这是**能力归属错位**。
 
@@ -23,7 +23,7 @@ CapNest 做的事只有一件：**把个人积累的 AI 能力从 Agent 中解�
 
 ## 目标用户
 
-第一阶段只有一个画像：**同时使用多个 Agent 的重度 AI 用户**。白天用 Codex 写代码，晚上用 Claude Code 做论文调研，两边需要同一套「SQL 分析」「数据库 MCP」「论文评审」。
+第一阶段只有一个画像：**同时使用多个 Agent 的重度 AI 用户**。白天用 mcode 写代码，晚上用 Claude Code 做论文调研，两边需要同一套「SQL 分析」「数据库 MCP」「论文评审」。
 
 这类用户的痛点不是「没有能力」，而是**能力无法沉淀、无法迁移、无法保持版本一致**。
 

@@ -30,14 +30,14 @@
 | `rich` | ≥13 | 终端表格与彩色 diff |
 | `pydantic` | ≥2.7 | 数据模型与校验 |
 | `pyyaml` | ≥6.0 | Manifest / Profile / Lockfile |
-| `tomlkit` | ≥0.13 | TOML **无损**读写 |
+| `tomlkit` | ≥0.13 | TOML **无损**读写（v0.2 的 Codex Adapter 才需要，v1 不引入） |
 | `platformdirs` | ≥4 | 定位 Agent 配置目录 |
 
 **标准库够用、不引入**：`hashlib`、`difflib`、`shutil`、`tomllib`（只读探测）、`json`、`unicodedata`、`sqlite3`（v1 不用）。
 
 **开发依赖**：`pytest`、`pytest-cov`、`ruff`。
 
-`tomlkit` 是关键项：Codex 的 `config.toml` 里有大量注释与手写格式，`tomllib` 只读、普通 `toml` 会重排格式，只有 tomlkit 能 round-trip。
+v1 不引入 TOML 依赖：两个目标的配置分别是 YAML 与 JSON，用 `pyyaml` 与标准库 `json` 即可。Codex Adapter 落在 v0.2，届时再引入 `tomlkit`——Codex 的 `config.toml` 里有大量注释与手写格式，`tomllib` 只读、普通 `toml` 会重排格式，只有 tomlkit 能 round-trip。
 
 ## 分层
 
@@ -55,7 +55,7 @@
                    │
 ┌──────────────────▼───────────────────┐
 │            Adapter Layer             │
-│  Codex · Claude Code                 │
+│  mcode · Claude Code                 │
 └──────────────────┬───────────────────┘
                    │
 ┌──────────────────▼───────────────────┐
@@ -92,7 +92,7 @@ cli.py  →  commands/  →  deployment/  →  adapters/  →  store/  →  util
 
 - `commands/` 只做参数解析与输出编排，业务逻辑一律下沉
 - `deployment/` 是**与 Agent 无关**的核心：解析、diff、原子写、备份、状态
-- `adapters/` 是唯一知道 Codex / Claude Code 长什么样的地方
+- `adapters/` 是唯一知道 mcode / Claude Code 长什么样的地方
 - `store/` 只碰文件系统，不碰 Agent 目录
 
 ## 仓库文件树
@@ -155,7 +155,7 @@ CapNest/
 │       ├── adapters/             # Agent 适配层
 │       │   ├── __init__.py       # Adapter 注册表
 │       │   ├── base.py           # Adapter 协议 + 能力矩阵
-│       │   ├── codex.py
+│       │   ├── mcode.py
 │       │   └── claude_code.py
 │       │
 │       ├── security/
@@ -170,7 +170,7 @@ CapNest/
 ├── tests/
 │   ├── conftest.py               # 临时工作区、临时 Agent HOME
 │   ├── fixtures/
-│   │   ├── codex_config.toml     # Codex 配置样本（M0 实测抓取）
+│   │   ├── mcode_config.yaml     # mcode 配置样本（M0 实测抓取）
 │   │   ├── claude.json           # Claude Code 配置样本（M0 实测抓取）
 │   │   ├── skill/                # 样本 Skill（SKILL.md + capability.yaml）
 │   │   └── mcp/                  # 样本 MCP Server
@@ -183,7 +183,7 @@ CapNest/
 │   ├── test_atomic.py
 │   ├── test_backup.py
 │   ├── test_scan.py
-│   ├── test_codex_adapter.py
+│   ├── test_mcode_adapter.py
 │   ├── test_claude_adapter.py
 │   └── test_cli_e2e.py
 │
@@ -339,7 +339,7 @@ workspace: .
 # 命令省略参数时的默认值
 default_profile: data-agent
 default_targets:
-  - codex
+  - mcode
   - claude-code
 
 # 部署形态：copy | symlink（Windows 需开发者模式）
@@ -348,9 +348,9 @@ deployment:
 
 # Agent 位置；缺省由 platformdirs 推断
 targets:
-  codex:
-    home: C:/Users/<user>/.codex
-    config_file: C:/Users/<user>/.codex/config.toml
+  mcode:
+    home: C:/Users/<user>/.minimax
+    config_file: C:/Users/<user>/.minimax/config.yaml
   claude-code:
     home: C:/Users/<user>/.claude
     config_file: C:/Users/<user>/.claude.json

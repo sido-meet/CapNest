@@ -2,100 +2,82 @@
 
 本文描述两个目标 Agent 的**真实配置格式**与读写方式。
 
-这些格式全部来自本机实测：用 `CLAUDE_CONFIG_DIR` / `CODEX_HOME` 指向临时目录后调用两个 Agent 的 CLI，观察写入结果。实测未触碰真实配置。Agent 版本升级后格式可能变化，因此 Adapter 的行为由 golden fixture 测试锁定（见 [003 Architecture](003-architecture.md) 的测试策略）。
+这些格式全部来自本机实测：用 `CLAUDE_CONFIG_DIR` / `CODEX_HOME` 等环境变量把 Agent 的配置目录指向临时目录后调用其 CLI，观察写入结果。实测未触碰真实配置。Agent 版本升级后格式可能变化，因此 Adapter 的行为由 golden fixture 测试锁定（见 [003 Architecture](003-architecture.md) 的测试策略）。
 
-## Codex
+## v1 的两个目标
 
-### MCP 配置
+| Target | 是什么 | 为什么是它 |
+| --- | --- | --- |
+| `mcode` | MiniMax Code | 与 Claude Code 是两个独立实现，都遵循 Agent Skills 规范，且都不是 CapNest 的开发宿主 |
+| `claude-code` | Claude Code | 同上；且它的用户级 MCP 配置是共享大文件，正好覆盖最难的那种写入场景 |
 
-存储位置：`~/.codex/config.toml`，键为 `[mcp_servers.<name>]`。
+**为什么 v1 不包含 `codex`**：CapNest 本身就在 Codex 里开发。把 CapNest 部署进 `~/.codex` 等于让被测对象改写开发宿主自己——技能目录会被热加载，配置会被并发读写，测试结果不可信；而且「跨 Agent 一致性」的价值恰恰体现在**两个不同的 Agent**上，其中一个是自己就退化成了自测。Codex 的 Adapter 保留在 v0.2，用来验证「增加第三个目标」的实际成本。
 
-stdio 类型：
+## MiniMax Code（`mcode`）
 
-```toml
-[mcp_servers.capnest_probe]
-command = "echo"
-args = ["hi"]
-```
+### 概况
 
-HTTP 类型：
-
-```toml
-[mcp_servers.probe_http]
-url = "https://example.com/mcp"
-```
-
-真实 `config.toml` 里还观察到的同段字段：
-
-| 字段 | 用途 |
+| 项 | 值 |
 | --- | --- |
-| `command` / `args` | stdio 启动命令 |
-| `env` | 字面量环境变量表 |
-| `env_vars` | **环境变量名列表**（从宿主环境透传，不是值） |
-| `url` | HTTP 端点 |
-| `http_headers` | HTTP 头 |
-| `enabled` | 是否启用 |
-| `startup_timeout_sec` | 启动超时 |
-| `default_tools_approval_mode` | **Server 级**的工具审批策略（如 `prompt`） |
+| 版本 | 0.6.2 |
+| 安装目录 | `~/.minimax-code/`（只放安装产物与版本，不放配置） |
+| **数据目录** | **`~/.minimax/`** |
+| 用户配置 | `~/.minimax/config.yaml` |
+| CLI | `mcode init` `exec` `acp` `login` `logout` `update` `provider` `plugin` |
 
-`default_tools_approval_mode` 名字里带 tools，但它挂在 Server 段下，是**该 Server 全部 Tool 的统一策略**，不是单个 Tool 的条目。这印证了 [001 Domain model](001-domain.md) 的粒度结论。
+**注意**：`~/.minimax-code/` 是安装目录，`~/.minimax/` 才是配置与数据目录。两者都在用户主目录下，只有一个字母之差，极易写错。
 
 ### Skills
 
-- 位置：`~/.codex/skills/<name>/SKILL.md`
-- `.system/` 子目录是内置 skill，**CapNest 绝不触碰**
-- frontmatter 只有两个字段：
+| 位置 | 归属 | CapNest 是否可写 |
+| --- | --- | --- |
+| `~/.minimax/skills/<name>/` | 用户级 | **是**（v1 落点） |
+| `~/.minimax/.builtin-skills/` | 内置 | **否**，绝不触碰 |
+| `~/.minimax/agents/<agent>/skills/` | agent 级 | 否 |
+| `<workspace>/.minimax/skills/` | 工作区级 | 否 |
+| `<workspace>/.claude/skills/` | 工作区级（兼容读取） | 否 |
+| `<workspace>/.agents/skills/` | 工作区级（兼容读取） | 否 |
+
+`~/.minimax/skills/` 与 `~/.minimax/.builtin-skills/` 是同级的两个目录，**内置目录永远不碰**——这与 Codex 的 `.system/` 是同一条规则。
+
+### frontmatter
+
+用户 skill 的 frontmatter：
 
 ```markdown
 ---
-name: "imagegen"
-description: "Generate or edit raster images when the task benefits from …"
+name: manim
+description: |
+  用 Manim Community 把想法做成解释型动画：分镜 → 场景代码 → 预览渲染 → 中文 TTS 配音 → 烧录字幕 → 成片 mp4。…
+descriptions:
+  zh-Hans: "用 Manim 制作讲解动画：分镜、场景代码、预览渲染、中文配音、字幕、mp4。"
+displayNames:
+  zh-Hans: "Manim 动画视频"
 ---
 ```
 
-- 启停通过 `config.toml` 的 `[[skills.config]]` 数组控制（`path` + `enabled`）
+- `name` + `description` 必需
+- `descriptions` / `displayNames` 是**可选的多语言扩展**，键为 BCP-47 语言标签
 
-### 写入 `config.toml` 的正确做法
+**CapNest 只写 `name` 与 `description`**。资产自带的其它 frontmatter 字段原样保留，不覆盖、不删除——它们是资产的一部分，删掉就改变了资产内容。
 
-`config.toml` 是**共享文件**，里面有用户手写的注释和大量无关配置。必须用 `tomlkit` 做文档级编辑：
+### MCP
 
-```python
-from tomlkit import parse as toml_parse
-from tomlkit.items import Table
-
-doc = toml_parse(original_text)
-
-servers = doc.get("mcp_servers")
-if servers is None:
-    servers = Table()
-    doc["mcp_servers"] = servers
-
-servers[name] = {"command": cmd, "args": args, "env": env}
-```
-
-写入前后的双重保护：
-
-1. 编辑在内存中的副本上进行，不动原文件
-2. 序列化后与原文做 diff，**只允许 `mcp_servers.<name>` 相关的行变化**；出现任何预期外变化 → 中止并报错
-
-### 落点与能力矩阵
-
-| 资产类型 | 落点 |
+| 位置 | 用途 |
 | --- | --- |
-| Skill | `~/.codex/skills/<name>/` |
-| MCP Server | `~/.codex/config.toml` 的 `[mcp_servers.<name>]` |
+| `~/.minimax/config.yaml` 的 `mcpServers` 段 | 用户级 MCP 配置 |
+| plugin 目录下的 `mcp.json` | 插件自带 MCP，wrapper 结构为 `{$schema, mcpServers}` |
+| `<workspace>/.mcp.json` | 项目级 MCP 配置 |
 
-```python
-TargetCapabilities(
-    target="codex",
-    supports={CapabilityType.SKILL, CapabilityType.MCP_SERVER},
-    deployment_modes={DeploymentMode.COPY, DeploymentMode.SYMLINK},
-    skills_path="~/.codex/skills",
-    mcp_backend="toml",
-)
-```
+`mcode` **没有** `mcode mcp` 子命令，MCP 只能通过配置文件或 plugin 声明。因此 MCP 的落点需要实测确认（第一刀的实测任务 T0.9）。
 
-Skill 部署：目标已存在且不是 CapNest 管理的 → 报错（退出码 7），不覆盖；已存在且是 CapNest 管理的 → 目录级比对，有差异则整目录替换（先备份）。
+### CLI 命令面
+
+| CLI | 子命令 |
+| --- | --- |
+| `mcode plugin` | `list` `add` `remove` `enable` `disable` `marketplace` |
+
+没有 MCP 管理命令，也没有 dry-run / diff / rollback——正好是 CapNest 需要的反面。CLI 只用于 `doctor` 里的版本探测。
 
 ## Claude Code
 
@@ -146,7 +128,7 @@ HTTP 类型：
 ### Skills
 
 - 位置：`~/.claude/skills/<name>/SKILL.md`
-- frontmatter 与 Codex 相同（`name` + `description`）
+- frontmatter 与 mcode 相同（`name` + `description`）
 - **存在嵌套目录**（实测：`~/.claude/skills/ai-research-skills/0-autoresearch-skill/SKILL.md`）。v1 只支持**顶层单层**的 skill 目录，嵌套视为不支持并在 `validate` 阶段报 warn，且拒绝覆盖
 
 ### 定点块编辑（关键设计）
@@ -171,22 +153,13 @@ HTTP 类型：
 
 **并发保护**：写前检查文件 mtime 与读取时一致；不一致则中止并提示重试。
 
-### 落点与能力矩阵
+### CLI 命令面
 
-| 资产类型 | 落点 |
-| --- | --- |
-| Skill | `~/.claude/skills/<name>/` |
-| MCP Server | `~/.claude.json` 顶层 `mcpServers.<name>` |
+| CLI | 子命令 | 关键选项 |
+| --- | --- | --- |
+| `claude mcp` | `list` `get` `add` `remove` | `--transport http` / `-e/--env` / `-H/--header` / `-s/--scope local\|user\|project` |
 
-```python
-TargetCapabilities(
-    target="claude-code",
-    supports={CapabilityType.SKILL, CapabilityType.MCP_SERVER},
-    deployment_modes={DeploymentMode.COPY, DeploymentMode.SYMLINK},
-    skills_path="~/.claude/skills",
-    mcp_backend="json",
-)
-```
+同样不用于部署，只用于 `doctor` 的版本探测。
 
 ## MCP 定义的归一化
 
@@ -204,12 +177,14 @@ class McpServerDef:
     headers: dict[str, str]
 ```
 
-| 归一化字段 | Codex | Claude Code |
+| 归一化字段 | mcode | Claude Code |
 | --- | --- | --- |
 | `transport=stdio` | `command` + `args` + `env` | `type: "stdio"` + `command` + `args` + `env` |
-| `transport=http` | `url` + `http_headers` | `type: "http"` + `url` + `headers` |
+| `transport=http` | `url` + `headers` | `type: "http"` + `url` + `headers` |
 
-**密钥处理**：明文密钥不进 Manifest。资产里写 `${ENV_VAR}`，部署时解析为环境变量的**值**（Codex 用 `env_vars` 只写变量名更好，但为兼容 Claude Code 的 `env`，v1 统一解析后写入 `env`）。`${ENV_VAR}` 未定义时**报错中止**，不写空值。
+mcode 一侧的具体键名在第二刀实测后填实。
+
+**密钥处理**：明文密钥不进 Manifest。资产里写 `${ENV_VAR}`，部署时解析为环境变量的**值**。`${ENV_VAR}` 未定义时**报错中止**，不写空值。
 
 ## Adapter 协议
 
@@ -220,7 +195,7 @@ class TargetCapabilities:
     supports: set[CapabilityType]
     deployment_modes: set[DeploymentMode]
     skills_path: str | None
-    mcp_backend: Literal["toml", "json"] | None
+    mcp_backend: Literal["yaml", "json"] | None
     notes: str = ""
 
 
@@ -249,14 +224,22 @@ class Adapter(Protocol):
 | 声明能力矩阵 | 归属证明 |
 | 校验写回结果 | 部署状态记录 |
 
-## 两个 Agent CLI 的命令面
+## 后续目标：Codex（v0.2）
 
-| CLI | 子命令 | 关键选项 |
-| --- | --- | --- |
-| `codex mcp` | `list` `get` `add` `remove` `login` `logout` | `--url` / `--env KEY=VALUE` / `-- <COMMAND>...` |
-| `claude mcp` | `list` `get` `add` `remove` | `--transport http` / `-e/--env` / `-H/--header` / `-s/--scope local\|user\|project` |
+以下为本机实测结论，保留以便将来实现 Adapter 时不必重新调研：
 
-**CapNest 不调用这两个 CLI 来做部署**——CLI 直接写盘，没有 dry-run、没有 diff、没有回滚，正好是 CapNest 需要的反面。CLI 只用于 `doctor` 里的版本探测。
+| 项 | 值 |
+| --- | --- |
+| MCP 配置 | `~/.codex/config.toml`，键 `[mcp_servers.<name>]` |
+| stdio | `command` + `args` |
+| http | `url` |
+| 同段其它字段 | `env`、`env_vars`（变量名列表）、`http_headers`、`enabled`、`startup_timeout_sec`、`default_tools_approval_mode`（**Server 级**的工具审批策略） |
+| Skills | `~/.codex/skills/<name>/SKILL.md`，frontmatter 仅 `name` + `description` |
+| 内置 skills | `~/.codex/skills/.system/`，**绝不触碰** |
+| 启停 | `config.toml` 的 `[[skills.config]]`（`path` + `enabled`） |
+| CLI | `codex mcp list\|get\|add\|remove\|login\|logout` |
+
+写入 `config.toml` 必须用 `tomlkit` 做文档级编辑：`tomllib` 只读，普通 `toml` 会重排格式，只有 tomlkit 能 round-trip 用户手写的注释。
 
 ## M0 必须完成的三项实测
 
@@ -264,11 +247,11 @@ class Adapter(Protocol):
 
 | # | 实测 | 目的 | 产出 |
 | --- | --- | --- | --- |
-| 1 | 分别用 Codex 与 Claude Code 自己的 CLI 把同一个 skill + 一个 MCP server 装进去 | 抓取两份目标配置文件的**真实样本** | `tests/fixtures/codex_config.toml`、`tests/fixtures/claude.json` |
-| 2 | 确认 Codex `config.toml` 与 Claude Code 配置文件在「两个工具同时写」时的合并与冲突规则 | 弄清共享配置的合并语义 | 本文的补遗 + fixture 样本 |
-| 3 | 确认 Codex CLI 版本对 `.codex-plugin/plugin.json` 的支持程度 | 决定 plugin 部署形态的排期 | plugin 部署形态是否进入 v0.2 的结论 |
+| 1 | 分别用 `mcode` 与 `claude` 自己的 CLI 安装同一个 skill 与一个 MCP server | 抓取两份目标配置文件的**真实样本** | `tests/fixtures/mcode_config.yaml`、`tests/fixtures/claude.json` |
+| 2 | 确认 mcode 的 `config.yaml` 与 Claude Code 的 `.claude.json` 在「两个工具同时写」时的合并与冲突规则 | 弄清共享配置的合并语义 | 本文的补遗 + fixture 样本 |
+| 3 | 确认 mcode 用户级 MCP 配置的落点（`config.yaml` 的 `mcpServers` 段，或独立的 `mcp.json`） | 决定 MCP Adapter 写哪里 | MCP 落点的结论 |
 
-实测脚本放在 `scripts/phase0_probe.ps1`，**必须用沙箱化的 `CLAUDE_CONFIG_DIR` / `CODEX_HOME`**，不得触碰真实配置。
+实测脚本放在 `scripts/phase0_probe.ps1`，**必须用沙箱化的环境变量指向临时目录**，不得触碰真实配置。
 
 ## 下一个
 

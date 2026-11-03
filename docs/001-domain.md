@@ -100,7 +100,7 @@ CapNest/
 | --- | --- | --- |
 | 资产 ID | `<目录名>/<name>`，目录名 ∈ {`skills`、`mcp`、`workflows`} | `skills/sql-analysis` |
 | Profile 名 | 单段小写标识 | `research` |
-| Target 名 | Agent 稳定标识 | `codex`、`claude-code` |
+| Target 名 | Agent 稳定标识 | `mcode`、`claude-code` |
 
 两条必须分清的规则：
 
@@ -118,7 +118,7 @@ CapNest/
 - 依赖解析结果写入 **Lockfile**，锁定各资产的版本与哈希。
 - 资产目录可用 Git 管理，Git commit 可作为版本的逻辑标识。
 
-Lockfile 的作用是保证 **Codex 与 Claude Code 部署的是完全相同版本的能力**。
+Lockfile 的作用是保证 **mcode 与 Claude Code 部署的是完全相同版本的能力**。
 
 ## Profile 结构
 
@@ -139,7 +139,7 @@ spec:
     - ref: mcp/database
 
   targets:
-    - codex
+    - mcode
     - claude-code
 ```
 

@@ -51,7 +51,7 @@ class Adapter(Protocol):
 
 ### 4. 写清楚怎么局部改写
 
-共享配置文件（Codex 的 `config.toml`、Claude Code 的 `.claude.json`）**不能整体重写**。Adapter 必须实现定点编辑：
+共享配置文件（mcode 的 `config.yaml`、Claude Code 的 `.claude.json`）**不能整体重写**。Adapter 必须实现定点编辑：
 
 1. 读原文为字符串
 2. 定位目标键的块边界

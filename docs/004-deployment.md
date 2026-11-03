@@ -33,7 +33,7 @@
 | 维度 | v1 | 说明 |
 | --- | --- | --- |
 | 资产类型 | Skill、MCP Server 可部署；Workflow **只登记** | 没有执行引擎，部署了也没地方用 |
-| 目标 | `codex`、`claude-code` | `openclaw` 规划中 |
+| 目标 | `mcode`、`claude-code` | `codex` 规划中（v0.2） |
 | 形态 | `copy`（默认）、`symlink`（opt-in） | Windows 上 `copy` 是唯一普遍可用的方式；`symlink` 需开发者模式 |
 | 变更类型 | 只做「新增 / 更新」，**不做删除** | 见下 |
 
@@ -120,7 +120,7 @@ class AtomicWriter:
 | 已存在（将被修改） | 复制到 `state/backups/<ts>/<target>/<相对路径>` |
 | 不存在（将新建） | 在 `created_paths` 中记录，**不备份** |
 
-新建的目录（如 `~/.codex/skills/sql-analysis/`）在 `created_paths` 里记绝对路径。
+新建的目录（如 `~/.minimax/skills/sql-analysis/`）在 `created_paths` 里记绝对路径。
 
 ### 回滚
 

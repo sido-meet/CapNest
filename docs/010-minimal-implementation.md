@@ -22,16 +22,20 @@
 
 第一刀只解决这一个问题：
 
-> **我把一份 Skill 装进 Codex 和 Claude Code，两边内容一致。改这一份，两边都能同步；同步前能看到差异；出了问题能一键还原。**
+> **我把一份 Skill 装进 mcode 和 Claude Code，两边内容一致。改这一份，两边都能同步；同步前能看到差异；出了问题能一键还原。**
 
-「一份能力，两处同步」是 CapNest 存在的理由，所以**目标不能收窄到只有一个 Agent**。而收窄资产类型不影响问题成立——Skill 已经足以暴露核心难点（归属证明、原子写、diff、回滚、跨目标一致性）。
+「一份能力，两处同步」是 CapNest 存在的理由，所以**目标不能收窄到只有一个 Agent**。
+
+**为什么是 mcode 与 Claude Code，而不是 Codex**：CapNest 本身就在 Codex 里开发，把被测对象部署进 `~/.codex` 等于让它改写开发宿主自己——技能目录会被热加载、配置会被并发读写，测试结果不可信；而且跨 Agent 一致性的价值恰恰体现在两个**不同的** Agent 上，其中一个是自己就退化成了自测。Codex 的 Adapter 推到 v0.2。
+
+而收窄**资产类型**不影响问题成立——Skill 已经足以暴露核心难点（归属证明、原子写、diff、回滚、跨目标一致性）。
 
 ## 3. 最小边界
 
 | 维度 | 第一刀取值 | 砍掉了什么 | 为什么现在砍不伤闭环 |
 | --- | --- | --- | --- |
 | 资产类型 | **只有 Skill** | MCP Server、Workflow | MCP 要改写 Agent 的共享配置文件，风险高一档；Workflow 不部署 |
-| 部署目标 | `codex` + `claude-code` | 其他 Agent | 跨 Agent 一致性就是问题本身，不能砍 |
+| 部署目标 | `mcode` + `claude-code` | 其他 Agent | 跨 Agent 一致性就是问题本身，不能砍 |
 | 部署形态 | **只有 `copy`** | `symlink` | `symlink` 在 Windows 上需要开发者模式，不是普遍能力；目录复制是唯一普遍可用的形态 |
 | 命令 | 7 个 | `list` `search` `validate` `doctor` 完整版 | 这几个是「看」的工具，不在闭环链路上，可后补 |
 | 存储 | `assets/` + `profiles/` + `state/*.json` | 数据库 | 几十个资产的量级，扫目录足够 |
@@ -91,7 +95,7 @@ spec:
   components:
     - ref: skills/sql-analysis
   targets:
-    - codex
+    - mcode
     - claude-code
 ```
 
@@ -101,7 +105,7 @@ spec:
 
 ```json
 {
-  "C:/Users/x/.codex/skills/sql-analysis": "sha256:9f2c…"
+  "C:/Users/x/.minimax/skills/sql-analysis": "sha256:9f2c…"
 }
 ```
 
@@ -110,14 +114,14 @@ spec:
 ```json
 [
   {
-    "id": "20261103T142500Z-codex",
+    "id": "20261103T142500Z-mcode",
     "profile": "data-agent",
-    "target": "codex",
+    "target": "mcode",
     "created_at": "2026-11-03T14:25:00Z",
     "mode": "copy",
-    "applied_paths": ["C:/Users/x/.codex/skills/sql-analysis"],
+    "applied_paths": ["C:/Users/x/.minimax/skills/sql-analysis"],
     "backups": {},
-    "created_paths": ["C:/Users/x/.codex/skills/sql-analysis"],
+    "created_paths": ["C:/Users/x/.minimax/skills/sql-analysis"],
     "asset_hashes": {"skills/sql-analysis": "sha256:9f2c…"}
   }
 ]
@@ -160,7 +164,7 @@ src/capnest/deployment/ownership.py  # 归属证明
 src/capnest/deployment/backup.py     # 备份 / 还原
 src/capnest/deployment/state.py      # 部署记录读写
 src/capnest/adapters/base.py         # Adapter 协议 + TargetState
-src/capnest/adapters/codex.py        # skills 目录读写
+src/capnest/adapters/mcode.py        # skills 目录读写
 src/capnest/adapters/claude_code.py  # skills 目录读写
 tests/…
 ```
@@ -226,7 +230,7 @@ class OwnershipRegistry:
 | 3 | 数据模型与哈希 | `models.py`, `hashing.py`, `util/text.py` | 哈希规则表逐条有单测；同一目录两次哈希相同，改动一个字节即变 |
 | 4 | `add` 与扫描 | `store/assets.py`, `commands/add.py`, `security/scan.py`, `util/fs.py` | `capnest add skill ./x` 复制进 `assets/skills/x/` 并生成 `capability.yaml`；Unicode 命中退出码 6 |
 | 5 | `profile create` | `store/profiles.py`, `commands/profile.py` | 生成 `profiles/data-agent.yaml`；同名拒绝退出码 7 |
-| 6 | Adapter 只读 | `adapters/base.py`, `adapters/codex.py`, `adapters/claude_code.py`, `deployment/resolver.py` | 能读出两个 Agent 的 `skills/` 现状并归一化成 `TargetState` |
+| 6 | Adapter 只读 | `adapters/base.py`, `adapters/mcode.py`, `adapters/claude_code.py`, `deployment/resolver.py` | 能读出两个 Agent 的 `skills/` 现状并归一化成 `TargetState` |
 | 7 | `plan` | `deployment/diff.py`, `commands/plan.py` | 输出目录树 diff；**运行后目标目录无任何变化**（用 mtime 断言） |
 | 8 | 归属、备份、原子写、`apply` | `deployment/ownership.py`, `atomic.py`, `backup.py`, `state.py`, `commands/apply.py` | apply 后两个 Agent 都有该 skill 且内容哈希一致；未 claim 的同名目录拒绝写入（退出码 7） |
 | 9 | `status` | `commands/status.py` | 列出每个目标的部署记录与当前状态 |
@@ -245,7 +249,7 @@ class OwnershipRegistry:
 feat(m0): [T0.1] 项目骨架与依赖锁定
 feat(m0): [T0.5] Typer 装配与全局选项
 feat(m1): [T1.2] 目录规范化内容哈希
-feat(m2): [T2.8] Codex Adapter 只读实现
+feat(m2): [T2.8] mcode Adapter 只读实现
 feat(m2): [T2.13] apply 命令完整流程
 feat(m2): [T2.15] rollback 命令实现
 ```
@@ -260,10 +264,10 @@ feat(m2): [T2.15] rollback 命令实现
 uv run capnest init .\ws
 uv run capnest add skill .\fixtures\sql-analysis
 uv run capnest profile create data-agent
-uv run capnest plan   --profile data-agent --target codex,claude-code
-uv run capnest apply  --profile data-agent --target codex,claude-code --yes
+uv run capnest plan   --profile data-agent --target mcode,claude-code
+uv run capnest apply  --profile data-agent --target mcode,claude-code --yes
 uv run capnest status
-uv run capnest rollback --target codex
+uv run capnest rollback --target mcode
 ```
 
 | # | 断言 |

@@ -9,7 +9,7 @@
 | MCP | Database MCP、Filesystem MCP |
 | Skills | SQL Analysis、Data Diagnosis |
 | Workflow | Data Diagnosis Pipeline |
-| Codex | 可用 |
+| mcode | 可用 |
 | Claude Code | 可用 |
 
 ## 通过标准
@@ -30,7 +30,7 @@
 | 验收项 | 验证方式 |
 | --- | --- |
 | 资产只维护一份 | 删除 Agent 侧副本，从 `assets/` 重新部署，结果一致 |
-| 两个 Agent 都可用 | 在 Codex 与 Claude Code 中各执行一次真实任务（如查询数据库并给出 SQL 分析结论） |
+| 两个 Agent 都可用 | 在 mcode 与 Claude Code 中各执行一次真实任务（如查询数据库并给出 SQL 分析结论） |
 | 版本一致 | 比对两侧部署后的资产哈希 |
 | 版本落后可检测 | 修改 `assets/` 中的 Skill，重跑 `status` 提示该资产版本落后 |
 | 漂移可检测 | 手工改动 Agent 侧配置，重跑 `status` 报 drift |
