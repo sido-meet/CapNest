@@ -146,4 +146,3 @@ def test_profile_create_with_unknown_asset_exits_8(run_cli, workspace: Path) -> 
 def test_profile_show_missing_exits_8(run_cli, workspace: Path) -> None:
     result = run_cli("--json", "profile", "show", "nope", workspace=workspace)
     assert result.returncode == 8
-

@@ -124,6 +124,7 @@ CapNest/
 │       ├── jsonout.py           # --json 输出协议
 │       ├── models.py            # 全部 Pydantic 模型
 │       ├── hashing.py           # 规范化内容哈希
+│       ├── validation.py        # 资产与 Profile 的校验规则
 │       ├── config.py            # config.yaml 读写
 │       │
 │       ├── commands/            # 每个命令一个模块

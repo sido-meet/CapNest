@@ -13,7 +13,7 @@ from typing import Any
 import typer
 
 from capnest.config import default_target_paths_all
-from capnest.context import AppContext, workspace_of
+from capnest.context import AppContext, use_json, workspace_of
 from capnest.store.workspace import Workspace
 
 #: 各目标 Agent 的 CLI 与版本参数。
@@ -101,10 +101,12 @@ def _capabilities() -> dict[str, Any]:
 def doctor(
     ctx: typer.Context,
     target: list[str] = typer.Option([], "--target", help="只检查指定目标"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """自检：运行环境、工作区与目标 Agent。"""
     context: AppContext = ctx.obj
     context.output.command = "doctor"
+    use_json(context, json_)
 
     all_targets = sorted(default_target_paths_all())
     selected = [name for name in target if name in all_targets] if target else all_targets

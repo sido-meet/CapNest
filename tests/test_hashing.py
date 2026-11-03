@@ -94,4 +94,3 @@ def test_hash_is_stable_across_calls(tmp_path: Path) -> None:
     _write(directory / "SKILL.md", b"hello\n")
     assert hash_dir(directory) == hash_dir(directory)
     assert hash_dir(directory).startswith("sha256:")
-

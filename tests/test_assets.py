@@ -142,4 +142,3 @@ def test_adopt_missing_skill_raises_not_found(
     monkeypatch.setenv("CAPNEST_TARGET_HOME_MCODE", str(tmp_path / "target-home"))
     with pytest.raises(NotFound):
         AssetStore(workspace).adopt_from_target("mcode", "nope")
-

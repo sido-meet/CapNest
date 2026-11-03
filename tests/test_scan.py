@@ -67,4 +67,3 @@ def test_line_and_column_are_reported(tmp_path: Path) -> None:
     findings = scan_file(path)
     assert findings[0].line == 2
     assert findings[0].column == 7
-

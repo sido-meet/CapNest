@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typer
 
-from capnest.context import AppContext, ready_workspace
+from capnest.context import AppContext, ready_workspace, use_json
 from capnest.store.assets import AssetStore
 
 #: `--sort` 的可选值。
@@ -36,10 +36,12 @@ def ls(
     ctx: typer.Context,
     type_: str = typer.Option(None, "--type", help="只列出某一类资产"),
     sort: str = typer.Option("id", "--sort", help=f"排序字段：{' / '.join(SORT_KEYS)}"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """列出全部资产。"""
     context: AppContext = ctx.obj
     context.output.command = "list"
+    use_json(context, json_)
 
     workspace = ready_workspace(context)
     records = [record.to_dict() for record in AssetStore(workspace).scan()]

@@ -73,14 +73,14 @@ uv run capnest --workspace ./workspace doctor --json
 
 ```bash
 uv run capnest --workspace ./workspace add skill examples/data-agent/assets/skills/sql-analysis
-uv run capnest --workspace ./workspace add mcp   examples/data-agent/assets/mcp/database
-uv run capnest --workspace ./workspace add workflow examples/data-agent/assets/workflows/data-diagnosis
 uv run capnest --workspace ./workspace add --from mcode:manim          # 收编既有资产
 uv run capnest --workspace ./workspace list --json
 uv run capnest --workspace ./workspace search "SQL"
 uv run capnest --workspace ./workspace validate                        # 退出码 0
-uv run capnest --workspace ./workspace profile create data-agent --asset skills/sql-analysis --asset mcp/database
+uv run capnest --workspace ./workspace profile create data-agent --asset skills/sql-analysis
 ```
+
+`add mcp` 与 `add workflow` 的命令面已在 M1 实现（同一套资产仓库），但**演示资产**随第二刀的 MCP 一起补——第一刀不部署 MCP，也就没有可演示的 MCP 资产。
 
 ### M2 · 部署层
 
@@ -210,23 +210,23 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 
 | # | 任务 | 主要文件 | 验收 |
 | --- | --- | --- | --- |
-| [ ] T1.1 | 全部数据模型 | `src/capnest/models.py` | [003 Architecture](003-architecture.md) 的模型全部实现；未知字段被忽略 |
-| [ ] T1.2 | 规范化内容哈希 | `src/capnest/hashing.py` | 符合规范化规则全部条目；跨平台固定样本测试通过 |
-| [ ] T1.3 | 文本归一与二进制判定 | `src/capnest/util/text.py` | CRLF/CR → LF；NUL 与不可解码判为二进制 |
-| [ ] T1.4 | 文件系统工具 | `src/capnest/util/fs.py` | 目录树复制保留权限；原子替换；Windows 目录联接可用 |
-| [ ] T1.5 | 隐藏 Unicode 扫描 | `src/capnest/security/scan.py` | 零宽 / bidi / tag / 同形异义四类均能检出；命中即阻断 |
-| [ ] T1.6 | 资产扫描与读取 | `src/capnest/store/assets.py` | `scan()` 遍历 `assets/`，校验 manifest，产出 `AssetRecord` |
-| [ ] T1.7 | 资产导入 | `src/capnest/store/assets.py` | `import_path()` 自动生成缺失的 `capability.yaml`；复制而非引用 |
-| [ ] T1.8 | 资产收编 | `src/capnest/store/assets.py` | `adopt_from_target()` 从 Agent 目录收编，保留原文件不动 |
-| [ ] T1.9 | Profile 与 Lock 仓库 | `src/capnest/store/profiles.py` | 读写 `profiles/*.yaml` 与 `*.lock.yaml` |
-| [ ] T1.10 | `add` 命令 | `src/capnest/commands/add.py` | 支持 `add <kind> <path>` 与 `add --from <target>:<name>`；Unicode 命中退出码 6 |
-| [ ] T1.11 | `list` 命令 | `src/capnest/commands/ls.py` | 表格输出 + `--json`；支持 `--type` 过滤 |
-| [ ] T1.12 | `search` 命令 | `src/capnest/commands/search.py` | 在 id / name / description / type 上子串匹配 |
-| [ ] T1.13 | `validate` 命令 | `src/capnest/commands/validate.py` | 10 项检查全部实现；error → 退出码 3 |
-| [ ] T1.14 | `profile` 命令组 | `src/capnest/commands/profile.py` | `create` / `list` / `show`；`show` 报告引用资产的缺失与版本 |
-| [ ] T1.15 | 演示项目 | `examples/data-agent/` | Skill + MCP + Workflow + Profile 四份样例齐备 |
-| [ ] T1.16 | 单元测试 | `tests/test_models.py`, `test_hashing.py`, `test_scan.py`, `test_assets.py`, `test_profiles.py` | 覆盖率 ≥ 80%（`deployment/` 除外） |
-| [ ] T1.17 | 文档对齐 | `README.md`, `SETUP.md`, `docs/006-cli.md` | CLI 段落与实际行为一致；`add --from` 写进文档 |
+| [x] T1.1 | 全部数据模型 | `src/capnest/models.py` | [003 Architecture](003-architecture.md) 的模型全部实现；未知字段被忽略 |
+| [x] T1.2 | 规范化内容哈希 | `src/capnest/hashing.py` | 符合规范化规则全部条目；跨平台固定样本测试通过 |
+| [x] T1.3 | 文本归一与二进制判定 | `src/capnest/util/text.py` | CRLF/CR → LF；NUL 与不可解码判为二进制 |
+| [x] T1.4 | 文件系统工具 | `src/capnest/util/fs.py` | 目录树复制保留权限；原子替换；Windows 目录联接可用 |
+| [x] T1.5 | 隐藏 Unicode 扫描 | `src/capnest/security/scan.py` | 零宽 / bidi / tag / 同形异义四类均能检出；命中即阻断 |
+| [x] T1.6 | 资产扫描与读取 | `src/capnest/store/assets.py` | `scan()` 遍历 `assets/`，校验 manifest，产出 `AssetRecord` |
+| [x] T1.7 | 资产导入 | `src/capnest/store/assets.py` | `import_path()` 自动生成缺失的 `capability.yaml`；复制而非引用 |
+| [x] T1.8 | 资产收编 | `src/capnest/store/assets.py` | `adopt_from_target()` 从 Agent 目录收编，保留原文件不动 |
+| [x] T1.9 | Profile 与 Lock 仓库 | `src/capnest/store/profiles.py` | 读写 `profiles/*.yaml` 与 `*.lock.yaml` |
+| [x] T1.10 | `add` 命令 | `src/capnest/commands/add.py` | 支持 `add <kind> <path>` 与 `add --from <target>:<name>`；Unicode 命中退出码 6 |
+| [x] T1.11 | `list` 命令 | `src/capnest/commands/ls.py` | 表格输出 + `--json`；支持 `--type` 过滤 |
+| [x] T1.12 | `search` 命令 | `src/capnest/commands/search.py` | 在 id / name / description / type 上子串匹配 |
+| [x] T1.13 | `validate` 命令 | `src/capnest/commands/validate.py` | 10 项检查全部实现；error → 退出码 3 |
+| [x] T1.14 | `profile` 命令组 | `src/capnest/commands/profile.py` | `create` / `list` / `show`；`show` 报告引用资产的缺失与版本 |
+| [x] T1.15 | 演示资产 | `examples/data-agent/assets/skills/sql-analysis/` | Skill 一份（MCP / Workflow 样例随第二刀的 MCP 一起补） |
+| [x] T1.16 | 单元测试 | `tests/test_models.py`, `test_hashing.py`, `test_scan.py`, `test_assets.py`, `test_profiles.py`, `test_validation.py`, `test_cli_m1.py` | 覆盖率 ≥ 80%（`deployment/` 除外） |
+| [x] T1.17 | 文档对齐 | `README.md`, `SETUP.md`, `docs/006-cli.md` | CLI 段落与实际行为一致；`add --from` 写进文档 |
 
 **M1 出口条件**：M1 验收命令全部通过；打 tag `m1-registry`。
 

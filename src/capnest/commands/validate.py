@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typer
 
-from capnest.context import AppContext, ready_workspace
+from capnest.context import AppContext, ready_workspace, use_json
 from capnest.errors import ValidationFailed
 from capnest.store.assets import AssetStore
 from capnest.store.profiles import ProfileStore
@@ -15,10 +15,12 @@ def validate(
     ctx: typer.Context,
     asset: str = typer.Option(None, "--asset", help="只校验一个资产 ID"),
     strict: bool = typer.Option(False, "--strict", help="把 warn 升级为 error"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """跑完整校验。"""
     context: AppContext = ctx.obj
     context.output.command = "validate"
+    use_json(context, json_)
 
     workspace = ready_workspace(context)
     records = AssetStore(workspace).scan()

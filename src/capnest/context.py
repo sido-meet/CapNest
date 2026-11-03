@@ -100,3 +100,13 @@ def ready_workspace(context: AppContext) -> Workspace:
     workspace = workspace_of(context)
     require_initialized(workspace.root)
     return workspace
+
+
+def use_json(context: AppContext, flag: bool) -> None:
+    """命令级的 `--json` 打开 JSON 输出。
+
+    `--json` 是全局选项（放在子命令之前），但 `capnest list --json` 也是
+    极常见的写法——两种都支持，命令级的开关优先级更高。
+    """
+    if flag:
+        context.output.json_mode = True

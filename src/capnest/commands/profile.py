@@ -23,6 +23,7 @@ def create(
     asset: list[str] = typer.Option([], "--asset", help="纳入 Profile 的资产 ID，可重复"),
     target: list[str] = typer.Option([], "--target", help="部署目标，可重复"),
     force: bool = typer.Option(False, "--force", help="已存在同名 Profile 时覆盖"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """新建一个 Profile。"""
     context: AppContext = ctx.obj
@@ -64,7 +65,10 @@ def create(
 
 
 @app.command("list")
-def list_profiles(ctx: typer.Context) -> None:
+def list_profiles(
+    ctx: typer.Context,
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
+) -> None:
     """列出全部 Profile。"""
     context: AppContext = ctx.obj
     context.output.command = "profile list"
@@ -98,6 +102,7 @@ def list_profiles(ctx: typer.Context) -> None:
 def show(
     ctx: typer.Context,
     name: str = typer.Argument(..., help="Profile 名"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """显示一个 Profile 的详情与引用资产的解析状态。"""
     context: AppContext = ctx.obj

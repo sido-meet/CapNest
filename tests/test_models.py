@@ -43,8 +43,8 @@ def test_capability_keeps_unknown_fields() -> None:
             },
         }
     )
-    assert getattr(manifest.spec, "dependencies") == [{"ref": "skills/y"}]
-    assert getattr(manifest.spec, "permissions") == {"requested": ["database"]}
+    assert manifest.spec.dependencies == [{"ref": "skills/y"}]
+    assert manifest.spec.permissions == {"requested": ["database"]}
 
 
 def test_capability_is_frozen() -> None:
@@ -80,4 +80,3 @@ def test_enum_values() -> None:
     assert CapabilityType.MCP_SERVER == "mcp-server"
     assert DeploymentMode.COPY == "copy"
     assert PhaseStatus.NOT_RUN == "not_run"
-

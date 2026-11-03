@@ -12,7 +12,7 @@ from pathlib import Path
 
 import typer
 
-from capnest.context import AppContext, ready_workspace
+from capnest.context import AppContext, ready_workspace, use_json
 from capnest.errors import UsageError
 from capnest.store.assets import AssetStore
 
@@ -24,10 +24,12 @@ def add(
     name: str = typer.Option(None, "--name", help="资产名，缺省用目录名"),
     force: bool = typer.Option(False, "--force", help="已存在同名资产时覆盖"),
     from_: str = typer.Option(None, "--from", help="从某个 Agent 收编：<target>:<name>"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """导入或收编一个能力。"""
     context: AppContext = ctx.obj
     context.output.command = "add"
+    use_json(context, json_)
 
     workspace = ready_workspace(context)
     store = AssetStore(workspace)

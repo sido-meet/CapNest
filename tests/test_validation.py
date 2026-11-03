@@ -94,4 +94,3 @@ def test_profile_with_missing_component_is_an_error(workspace: Workspace) -> Non
     profile = store.create("data-agent", assets=["skills/nope"])
     violations = validate_workspace([], [profile])
     assert "profile_component_missing" in codes(violations)
-

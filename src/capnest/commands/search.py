@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import typer
 
-from capnest.context import AppContext, ready_workspace
+from capnest.context import AppContext, ready_workspace, use_json
 from capnest.store.assets import AssetStore
 
 
@@ -26,10 +26,12 @@ def search(
     query: str = typer.Argument(..., help="要搜的关键词"),
     type_: str = typer.Option(None, "--type", help="只搜某一类资产"),
     limit: int = typer.Option(20, "--limit", help="最多返回多少条"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """按关键词查找资产。"""
     context: AppContext = ctx.obj
     context.output.command = "search"
+    use_json(context, json_)
 
     workspace = ready_workspace(context)
     needle = query.strip().lower()

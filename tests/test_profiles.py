@@ -60,4 +60,3 @@ def test_delete(workspace: Workspace) -> None:
     store.create("data-agent")
     store.delete("data-agent")
     assert not store.path_for("data-agent").exists()
-
