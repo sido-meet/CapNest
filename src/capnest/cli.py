@@ -1,4 +1,4 @@
-"""命令行入口（骨架）。
+"""命令行入口。
 
 全局选项放在**子命令之前**：`capnest --workspace ./ws --json add skill ./x`。
 """
@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import typer
 
@@ -34,6 +35,7 @@ def _show_version(value: bool) -> None:
 def root(
     ctx: typer.Context,
     json_mode: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
+    workspace: Path | None = typer.Option(None, "--workspace", help="工作区根目录"),
     no_color: bool = typer.Option(False, "--no-color", help="关闭彩色输出"),
     version: bool = typer.Option(
         False,
@@ -45,7 +47,10 @@ def root(
 ) -> None:
     """CapNest 的全局选项。"""
     color = not no_color and not os.environ.get("NO_COLOR")
-    context = AppContext(output=Output(json_mode=json_mode, color=color))
+    context = AppContext(
+        output=Output(json_mode=json_mode, color=color),
+        workspace=workspace.expanduser().resolve() if workspace is not None else None,
+    )
     set_current(context)
     ctx.obj = context
 
