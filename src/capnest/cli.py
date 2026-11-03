@@ -1,6 +1,7 @@
 """命令行入口。
 
 全局选项放在**子命令之前**：`capnest --workspace ./ws --json add skill ./x`。
+所有命令都通过 Typer 注册，业务逻辑在 `commands/` 与各子系统里。
 """
 
 from __future__ import annotations
@@ -12,8 +13,9 @@ from pathlib import Path
 import typer
 
 from capnest import __version__
-from capnest.context import AppContext, Output, set_current
+from capnest.context import AppContext, Output, set_current, workspace_of
 from capnest.errors import CapNestError
+from capnest.store.workspace import Workspace
 
 app = typer.Typer(
     name="capnest",
@@ -55,6 +57,18 @@ def root(
     ctx.obj = context
 
 
+def workspace_from(ctx: typer.Context) -> Workspace:
+    """解析当前命令使用的工作区（并缓存到上下文里）。"""
+    return workspace_of(ctx.obj)
+
+
+def register_commands() -> None:
+    """注册全部命令。拆开是为了让 `cli.py` 只剩装配逻辑。"""
+    from capnest.commands import init
+
+    app.command("init")(init.init)
+
+
 def main(argv: list[str] | None = None) -> None:
     """进程入口：把异常翻译成错误 envelope 与退出码。"""
     command = typer.main.get_command(app)
@@ -90,6 +104,9 @@ def _current_context() -> AppContext | None:
     from capnest.context import current
 
     return current()
+
+
+register_commands()
 
 
 if __name__ == "__main__":  # pragma: no cover
