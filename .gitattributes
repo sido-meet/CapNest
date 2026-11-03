@@ -1,0 +1,33 @@
+# 统一行尾：文本文件入库与检出均使用 LF。
+# 规则随仓库分发，优先级高于各人本机的 core.autocrlf，
+# 保证不同系统上 checkout 的工作区文件一致，diff 始终精确到行。
+* text=auto eol=lf
+
+# Windows 批处理必须用 CRLF，否则部分命令会解析异常
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件：禁止 git 做任何行尾转换，避免损坏文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+
+# 字体与前端产物
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.wasm binary
+
+# 编译产物与可执行文件
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.pyd binary
+*.node binary
