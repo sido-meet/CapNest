@@ -58,7 +58,7 @@ M4 收尾          ← 文档对齐、CI、打包
 ```bash
 uv run capnest --version
 uv run capnest --json init ./workspace
-uv run capnest doctor --json
+uv run capnest --workspace ./workspace doctor --json
 ```
 
 ### M1 · 资产层
@@ -72,14 +72,14 @@ uv run capnest doctor --json
 **验收**：
 
 ```bash
-uv run capnest add skill examples/data-agent/assets/skills/sql-analysis
-uv run capnest add mcp   examples/data-agent/assets/mcp/database
-uv run capnest add workflow examples/data-agent/assets/workflows/data-diagnosis
-uv run capnest add --from mcode:manim                  # 收编既有资产
-uv run capnest list --json
-uv run capnest search "SQL"
-uv run capnest validate          # 退出码 0
-uv run capnest profile create data-agent
+uv run capnest --workspace ./workspace add skill examples/data-agent/assets/skills/sql-analysis
+uv run capnest --workspace ./workspace add mcp   examples/data-agent/assets/mcp/database
+uv run capnest --workspace ./workspace add workflow examples/data-agent/assets/workflows/data-diagnosis
+uv run capnest --workspace ./workspace add --from mcode:manim          # 收编既有资产
+uv run capnest --workspace ./workspace list --json
+uv run capnest --workspace ./workspace search "SQL"
+uv run capnest --workspace ./workspace validate                        # 退出码 0
+uv run capnest --workspace ./workspace profile create data-agent --asset skills/sql-analysis --asset mcp/database
 ```
 
 ### M2 · 部署层
@@ -91,10 +91,10 @@ uv run capnest profile create data-agent
 **验收**：
 
 ```bash
-uv run capnest plan   --profile data-agent --target mcode,claude-code
-uv run capnest apply  --profile data-agent --target mcode,claude-code
-uv run capnest status --json
-uv run capnest rollback --target mcode
+uv run capnest --workspace ./workspace plan   --profile data-agent --target mcode,claude-code
+uv run capnest --workspace ./workspace apply  --profile data-agent --target mcode,claude-code
+uv run capnest --workspace ./workspace status --json
+uv run capnest --workspace ./workspace rollback --target mcode
 ```
 
 ### M3 · 闭环加固
@@ -140,8 +140,8 @@ scope: m0 | m1 | m2 | m3 | m4 | store | adapter-mcode | cli | security
 
 ```
 feat(m1): [T1.07] 实现资产导入与目录规范化哈希
-feat(m2): [T2.11] mcode Adapter 写入 MCP 段并保留原有格式
-fix(m2): [T2.14] tomlkit 写入时保留 config.toml 原有注释
+feat(m2): [T2.9] mcode Adapter 写入 MCP 段并保留原有格式
+fix(m2): [T2.11] Claude Code 定点块编辑保留 .claude.json 其余字节
 docs(007): 补充 v1 非目标清单
 ```
 

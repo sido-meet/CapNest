@@ -111,7 +111,7 @@ spec:
 | `spec.type` | 是（仅 `Capability`） | 协议类型：`skill` / `mcp-server` / `workflow` |
 | `spec.format` | 是（仅 `Capability`） | 内容格式标识，原生格式用其规范名 |
 | `spec.entrypoint` | 是（仅 `Capability`） | 入口文件，**相对于 Manifest 所在目录** |
-| `spec.dependencies` | 是（仅 `Capability`） | 依赖列表 |
+| `spec.dependencies` | 否（仅 `Capability`） | 依赖列表，默认空列表 |
 | `spec.permissions.requested` | 否 | 声明所需权限类别，供校验与提示 |
 | `spec.deployment` | 否 | 部署形态与开关，见 [004 Deployment](004-deployment.md) |
 | `spec.components[].ref` | 是（仅 `CapabilityProfile`） | 引用的资产 ID 全名 |
@@ -177,6 +177,7 @@ kind: CapabilityLock
 
 metadata:
   id: research
+  name: Research
   version: 1.0.0
 
 spec:

@@ -108,7 +108,7 @@ CapNest/
 ├── .editorconfig
 │
 ├── docs/
-│   ├── 000-philosophy.md … 009-cookbook.md
+│   ├── 000-philosophy.md … 010-minimal-implementation.md
 │   └── README.md
 │
 ├── src/
@@ -333,7 +333,8 @@ class CapabilityLock(Base):
 ```yaml
 version: 1
 
-# 工作区根目录；默认取当前目录
+# 工作区根目录；相对本文件所在目录解析
+# 解析顺序：--workspace > CAPNEST_HOME > 本字段 > 当前目录
 workspace: .
 
 # 命令省略参数时的默认值
@@ -365,7 +366,7 @@ state/
 └── backups/
     └── <timestamp>/
         └── <target>/
-            ├── config.toml          # 备份的原文件
+            ├── config.yaml           # mcode 的原配置
             ├── .claude.json
             └── skills/<name>/       # 备份的目录
 ```

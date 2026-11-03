@@ -82,7 +82,7 @@ spec:
   entrypoint: ./SKILL.md          # 必填，相对资产目录
 ```
 
-第一刀不实现 `dependencies`、`permissions`、`deployment`、`components`、`targets`。Profile 用一个简化结构：
+第一刀的**资产级** Manifest 不实现 `dependencies`、`permissions`、`deployment`。Profile 保留 `components` 与 `targets`（否则闭环无内容可部署），只是不带 `components[].version` 版本约束：
 
 ```yaml
 apiVersion: io.capnest.capability/v1alpha1
@@ -262,19 +262,21 @@ feat(m2): [T2.15] rollback 命令实现
 
 ```powershell
 uv run capnest init .\ws
-uv run capnest add skill .\fixtures\sql-analysis
-uv run capnest profile create data-agent
-uv run capnest plan   --profile data-agent --target mcode,claude-code
-uv run capnest apply  --profile data-agent --target mcode,claude-code --yes
-uv run capnest status
-uv run capnest rollback --target mcode
+uv run capnest --workspace .\ws add skill examples\data-agent\assets\skills\sql-analysis
+uv run capnest --workspace .\ws profile create data-agent --asset skills/sql-analysis --target mcode --target claude-code
+uv run capnest --workspace .\ws plan   --profile data-agent --target mcode,claude-code
+uv run capnest --workspace .\ws apply  --profile data-agent --target mcode,claude-code --yes
+uv run capnest --workspace .\ws status
+uv run capnest --workspace .\ws rollback --target mcode
 ```
+
+全局选项 `--workspace` 放在子命令之前；工作区解析规则见 [006 CLI](006-cli.md) 的「工作区解析」。
 
 | # | 断言 |
 | --- | --- |
 | 1 | `plan` 之后两个 Agent 的 skills 目录与执行前逐字节一致 |
 | 2 | `apply` 之后两个 Agent 都有该 skill，内容哈希与 `assets/` 中一致 |
-| 3 | 对已存在的非 CapNest 资产重复 `apply` → 退出码 7，不覆盖 |
+| 3 | 目标上已存在同名、且不由 CapNest 管理的目录 → `apply` 退出码 7，不覆盖 |
 | 4 | 重复 `apply` → 退出码 0，文件 mtime 不变（幂等） |
 | 5 | `rollback` 之后目标目录回到初始状态（逐字节） |
 | 6 | 任一步失败都不留下半成品（要么没写，要么写完整） |
@@ -286,7 +288,7 @@ uv run capnest rollback --target mcode
 | 刀 | 内容 | 风险 |
 | --- | --- | --- |
 | **第一刀**（本文） | Skill → 两个 Agent，copy，七条命令闭环 | 低：只碰目录复制 |
-| 第二刀 | MCP Server 部署（写 `config.toml` / `.claude.json`）+ `list` `search` `validate` `doctor` | **高**：共享配置文件的无损改写 |
+| 第二刀 | MCP Server 部署（写 `config.yaml` / `.claude.json`）+ `list` `search` `validate` `doctor` | **高**：共享配置文件的无损改写 |
 | 第三刀 | 漂移检测、版本落后、Lockfile、依赖求解 | 中 |
 | 第四刀 | GUI、MCP Discovery、更多目标、plugin 形态 | 低 |
 
