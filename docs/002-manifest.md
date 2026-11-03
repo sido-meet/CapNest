@@ -1,27 +1,31 @@
-# 03 · 统一 Capability Manifest
+# 002 Manifest
 
-这是 CapNest 最值得长期建设的基础。
+CapNest 不重新定义 Skill、MCP、Plugin 的内部格式，只提供一个统一的外层描述。
 
-我们**不重新定义** Skill、MCP 的内部格式，而是提供一个统一的外层描述。
-
-## 两种 kind
-
-CapNest 有两类 Manifest，共用同一个 `apiVersion`：
+## 三种 kind
 
 | kind | 放在哪 | 描述什么 | 例子 |
 | --- | --- | --- | --- |
-| `Capability` | 资产目录内的 `capability.yaml` | 一个具体资产：自己是什么、入口文件是什么、依赖什么 | `assets/skills/sql-analysis/capability.yaml` |
+| `Capability` | 资产目录内的 `capability.yaml` | 一个具体资产：自己是什么、入口是什么、依赖什么 | `assets/skills/sql-analysis/capability.yaml` |
 | `CapabilityProfile` | `profiles/<name>.yaml` | 一个能力组合：引用哪些资产、部署到哪些 Agent | `profiles/research.yaml` |
-| `CapabilityLock` | `profiles/<name>.lock.yaml` | 组合的依赖解析结果（由 CapNest 生成，勿手改） | `profiles/research.lock.yaml` |
+| `CapabilityLock` | `profiles/<name>.lock.yaml` | 组合的依赖解析结果，由 CapNest 生成，勿手改 | `profiles/research.lock.yaml` |
+
+三者共用同一个 `apiVersion`。
 
 **路径基准**：资产级 Manifest 位于资产目录内，因此 `entrypoint` 一律相对于该 Manifest 所在目录解析。Profile 是引用型的，不含任何 `entrypoint`。
 
-## 资产级 Manifest 草案
+## apiVersion
 
-> 这不是已发布的行业标准，是 CapNest 的设计草案。`apiVersion` 使用自有域名 `capabilityhub.dev` 占位，落地前需确认命名空间归属。
+```
+io.capnest.capability/v1alpha1
+```
+
+reverse-DNS 形式，与 Agent Skills（`agentskills.io`）、MCP Registry（`io.modelcontextprotocol.registry/…`）保持同一惯例。**命名空间在 v1 发布前定稿，之后 `apiVersion` 变更即属破坏性变更。**
+
+## 资产级 Manifest
 
 ```yaml
-apiVersion: capabilityhub.dev/v1alpha1
+apiVersion: io.capnest.capability/v1alpha1
 
 kind: Capability
 
@@ -42,10 +46,10 @@ spec:
     requested: []
 ```
 
-一个 MCP Server 资产的 Manifest：
+一个 MCP Server：
 
 ```yaml
-apiVersion: capabilityhub.dev/v1alpha1
+apiVersion: io.capnest.capability/v1alpha1
 
 kind: Capability
 
@@ -57,7 +61,7 @@ metadata:
 
 spec:
   type: mcp-server
-  format: mcp.server-json
+  format: mcp.local-config
   entrypoint: ./server.json
 
   dependencies: []
@@ -67,10 +71,10 @@ spec:
       - database
 ```
 
-一个 Workflow 资产的 Manifest：
+一个 Workflow：
 
 ```yaml
-apiVersion: capabilityhub.dev/v1alpha1
+apiVersion: io.capnest.capability/v1alpha1
 
 kind: Capability
 
@@ -82,7 +86,7 @@ metadata:
 
 spec:
   type: workflow
-  format: capabilityhub.workflow/v1alpha1
+  format: io.capnest.workflow/v1alpha1
   entrypoint: ./workflow.yaml
 
   dependencies:
@@ -107,16 +111,30 @@ spec:
 | `spec.type` | 是（仅 `Capability`） | 协议类型：`skill` / `mcp-server` / `workflow` |
 | `spec.format` | 是（仅 `Capability`） | 内容格式标识，原生格式用其规范名 |
 | `spec.entrypoint` | 是（仅 `Capability`） | 入口文件，**相对于 Manifest 所在目录** |
-| `spec.dependencies` | 是（仅 `Capability`） | 依赖列表（见下） |
+| `spec.dependencies` | 是（仅 `Capability`） | 依赖列表 |
 | `spec.permissions.requested` | 否 | 声明所需权限类别，供校验与提示 |
+| `spec.deployment` | 否 | 部署形态与开关，见 [004 Deployment](004-deployment.md) |
 | `spec.components[].ref` | 是（仅 `CapabilityProfile`） | 引用的资产 ID 全名 |
 | `spec.components[].version` | 否（仅 `CapabilityProfile`） | 版本约束，省略表示沿用 Lockfile |
 | `spec.targets` | 否（仅 `CapabilityProfile`） | 部署目标 Agent |
 
-## Profile 级 Manifest 草案
+### `spec.format` 词表
+
+| 值 | 含义 | v1 支持 |
+| --- | --- | --- |
+| `agentskills.io` | Skill 原生格式 | 登记 + 部署 |
+| `mcp.local-config` | **本地 MCP 启动配置**（`command`/`args`/`env` 或 `url`/`headers`） | 登记 + 部署 |
+| `mcp.registry-server-json` | MCP Registry 的发布元数据（发行方式，不是启动方式） | 仅校验 |
+| `codex.plugin` | `.codex-plugin/plugin.json` | 仅校验 |
+| `claude.plugin` | `.claude-plugin/plugin.json` | 仅校验 |
+| `io.capnest.workflow/v1alpha1` | Workflow 描述 | 登记，不部署 |
+
+`mcp.registry-server-json` 与 `mcp.local-config` 必须分开：前者描述「这个 server 如何**发布**」（npm / pypi / docker 发行方式），后者描述「这个 server 如何**在本机启动**」。混用一个 format id 会让本地资产无法表达。
+
+## Profile 级 Manifest
 
 ```yaml
-apiVersion: capabilityhub.dev/v1alpha1
+apiVersion: io.capnest.capability/v1alpha1
 
 kind: CapabilityProfile
 
@@ -137,11 +155,11 @@ spec:
     - claude-code
 ```
 
-Profile 不含 `entrypoint` 与 `permissions`——这些属于单个资产。**Profile 是部署的单位**，因此 Lockfile、Diff、Apply、Rollback 全部以 Profile 为粒度。
+Profile 不含 `entrypoint` 与 `permissions`——这些属于单个资产。
 
 ## 依赖与 Lockfile
 
-依赖条目草案（资产级与 Profile 级通用）：
+依赖条目：
 
 ```yaml
 dependencies:
@@ -153,7 +171,7 @@ dependencies:
 解析结果写入与 Profile 同名的 `profiles/research.lock.yaml`：
 
 ```yaml
-apiVersion: capabilityhub.dev/v1alpha1
+apiVersion: io.capnest.capability/v1alpha1
 
 kind: CapabilityLock
 
@@ -177,29 +195,20 @@ spec:
       source: local
 ```
 
-Lockfile 的作用是保证 **Codex 与 Claude Code 部署的是完全相同版本的能力**。
-
-## 参考的现有规范
-
-| 规范 / 项目 | 我们借鉴什么 |
-| --- | --- |
-| Agent Skills | Skill 原生格式 |
-| MCP Registry | MCP Server 描述 |
-| Agent Plugins | MCP + Skill 打包 |
-| Microsoft APM | 依赖管理、Lockfile、跨 Agent 部署 |
-| Hermes Registry | 统一 Manifest 和 Workflow 描述 |
-
 ## 演进原则
 
 - 字段只增不删，破坏性变更必须提升 `apiVersion` 主版本。
 - 未知字段一律忽略（forward compatible）。
-- `format` 使用「谁定义的格式就用谁的域名」规则，例如 `agentskills.io`、`mcp.server-json`。
-- CapNest 私有格式统一使用 `capabilityhub.*` 前缀。
+- `format` 使用「谁定义的格式就用谁的域名」规则，例如 `agentskills.io`、`mcp.local-config`。
+- CapNest 私有格式统一使用 `io.capnest.*` 前缀。
 - `spec.type`（协议类型名）与资产 ID 的目录名是两套词表，不要混用。
 
 ## 待决问题
 
-- [ ] 命名空间 `capabilityhub.dev` 是否最终采用（域名未注册前可先用 `capnest.dev`）
 - [ ] `permissions` 的权限类别词表
 - [ ] Workflow 的 `workflow.yaml` 最小描述格式
 - [ ] 是否支持更细粒度的 `compatibility`（如 `codex@0.9`）
+
+## 下一个
+
+[003 Architecture](003-architecture.md) — 这些文件如何被代码读取、校验与存储。
