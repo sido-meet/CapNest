@@ -18,6 +18,7 @@
 | 007 | [Tasks](007-tasks.md) | 先做什么，后做什么 |
 | 008 | [Acceptance](008-acceptance.md) | 什么算做完了 |
 | 009 | [Cookbook](009-cookbook.md) | 如何新增一个部署目标 |
+| 010 | [Minimum implementation](010-minimal-implementation.md) | **第一刀：最小工程实现的方案与顺序** |
 
 ## 约定
 

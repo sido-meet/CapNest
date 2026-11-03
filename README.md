@@ -26,6 +26,7 @@
 - [007 Tasks](docs/007-tasks.md)：逐条任务清单
 - [008 Acceptance](docs/008-acceptance.md)：什么算做完了
 - [009 Cookbook](docs/009-cookbook.md)：如何新增一个部署目标
+- [010 Minimum implementation](docs/010-minimal-implementation.md)：**第一个能跑的东西长什么样**
 
 ## Development
 
