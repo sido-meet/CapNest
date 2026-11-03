@@ -12,9 +12,11 @@ from typing import Any
 
 import typer
 
+from capnest.adapters import make_adapter
 from capnest.config import default_target_paths_all
 from capnest.context import AppContext, use_json, workspace_of
 from capnest.store.workspace import Workspace
+from capnest.util.fs import symlink_supported
 
 #: 各目标 Agent 的 CLI 与版本参数。
 _AGENT_CLIS: dict[str, tuple[str, ...]] = {
@@ -85,17 +87,22 @@ def _check_targets(workspace: Workspace, targets: list[str]) -> list[dict[str, s
 
 
 def _capabilities() -> dict[str, Any]:
-    """Adapter 能力矩阵（M2 起补全形态与后端信息）。"""
-    paths = default_target_paths_all()
-    return {
-        name: {
-            "supports": ["skill"],
-            "deployment_modes": ["copy"],
-            "skills_path": str(target.skills_path),
-            "mcp_backend": None,
-        }
-        for name, target in paths.items()
-    }
+    """Adapter 能力矩阵。"""
+    matrix: dict[str, Any] = {}
+    for name in default_target_paths_all():
+        try:
+            adapter = make_adapter(name)
+        except Exception:  # pragma: no cover - 目标不可构造时跳过
+            continue
+        matrix[name] = adapter.capabilities().to_dict()
+    return matrix
+
+
+def _check_symlink() -> list[dict[str, str]]:
+    """部署形态可用性。"""
+    available, reason = symlink_supported()
+    status = "ok" if available else "warn"
+    return [_check("deployment.symlink", status, reason)]
 
 
 def doctor(
@@ -116,6 +123,7 @@ def doctor(
     checks: list[dict[str, str]] = [_check_python()]
     checks.extend(_check_workspace(workspace))
     checks.extend(_check_targets(workspace, selected))
+    checks.extend(_check_symlink())
 
     failed = [c for c in checks if c["status"] == "fail"]
     payload = {
