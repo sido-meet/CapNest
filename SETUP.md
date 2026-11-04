@@ -133,6 +133,22 @@ uv run capnest --workspace .\workspace rollback --target mcode
 
 回滚只动 CapNest 记录过的路径：还原备份、删除本次新建的目录、释放归属。目标上你手工改过的内容不会被回滚覆盖——那属于漂移。
 
+
+### 2.8 看看目标侧有什么
+
+```powershell
+uv run capnest inspect claude-code
+uv run capnest inspect mcode
+```
+
+`inspect` 只读盘点目标 Agent 侧已有的 skill，标出 `managed`（CapNest 在管）、`unmanaged`（在，但不管）、`nested`（目录里套着别的 skill）、`container`（一堆 skill 的容器目录）。
+
+想把其中一份收编进 CapNest：
+
+```powershell
+uv run capnest --workspace .\workspace add --from claude-code:<名字>
+```
+
 ## 3. 让 Agent 帮你完成
 
 `capnest` 的 `--json` 输出是一份稳定协议，GUI 与 Agent 都依赖它。因此可以直接让 Agent 操作：

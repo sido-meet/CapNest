@@ -259,7 +259,10 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [x] T2.14 | `status` 命令 | `src/capnest/commands/status.py` | 输出 up-to-date / drift / version-lag / never-deployed / failed |
 | [x] T2.15 | `rollback` 命令 | `src/capnest/commands/rollback.py` | 还原 + 删除新建路径 + 移除记录 + 释放 claim |
 | [x] T2.16 | `doctor` 完整版 | `src/capnest/commands/doctor.py` | Agent 路径、CLI 版本、能力矩阵、symlink 可用性 |
+| [x] T2.18 | `inspect` 命令 | `src/capnest/commands/inspect.py` | 只读盘点目标侧已有的 skill；标出 managed / unmanaged / nested / container |
 | [x] T2.17 | Golden fixture 与端到端测试 | `tests/test_adapters.py`, `tests/test_deployment.py`, `tests/test_cli_e2e.py` | 读样本 → 归一化 → 断言 `TargetState`；写回后除目标键外逐字节不变 |
+
+**T2.18 capnest inspect**：目标侧盘点命令（只读），在 M2 合并后补上——它回答「目标里有哪些 skill、叫什么、CapNest 管不管」，是 `add --from` 的前置步骤。
 
 **T2.9 / T2.11 推迟到第二刀**：这两项是 MCP Server 的写入路径，而第一刀的资产类型只有 Skill、不写任何 Agent 共享配置文件。编号保留，配套的实测 T0.10 / T0.11 同样在第二刀做。
 
