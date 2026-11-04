@@ -12,6 +12,7 @@ from pathlib import Path
 
 import typer
 
+from capnest.config import DEFAULT_TARGETS
 from capnest.context import AppContext, ready_workspace, use_json
 from capnest.errors import UsageError
 from capnest.store.assets import AssetStore
@@ -26,7 +27,7 @@ def add(
     from_: str = typer.Option(
         None,
         "--from",
-        help="从某个 Agent 收编：<target>:<name>，或 <target>:* 收编全部",
+        help="从某个 Agent 收编：<target>:<name>，<target>:* 收编该目标全部，* 收编所有目标",
     ),
     json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
@@ -40,9 +41,13 @@ def add(
 
     if from_:
         target, separator, asset_name = from_.partition(":")
+        if from_ == "*":
+            summary = store.adopt_all_from_targets(list(DEFAULT_TARGETS), force=force)
+            context.output.success(summary, human=_render_multi(summary))
+            return
         if not separator or not target or not asset_name:
             raise UsageError(
-                "--from 的格式是 <target>:<name>",
+                "--from 的格式是 <target>:<name> / <target>:* / *",
                 {"value": from_, "example": "mcode:manim"},
             )
         if asset_name == "*":
@@ -67,13 +72,35 @@ def add(
 def _render_bulk(summary: dict) -> str:
     """批量收编的人类可读摘要。"""
     adopted = summary["adopted"]
+    duplicates = summary.get("duplicates", [])
+    conflicts = summary.get("conflicts", [])
     skipped = summary["skipped"]
     failed = summary["failed"]
     lines = [f"已收编 {len(adopted)} 个 skill（来源：{summary['target']}）"]
     for item in adopted:
         lines.append(f"  + {item['id']}")
+    for item in duplicates:
+        lines.append(f"  = {item['name']}  {item['reason']}")
+    for item in conflicts:
+        lines.append(f"  ! {item['name']}  {item['reason']}")
     for item in skipped:
         lines.append(f"  - {item['name']}  {item['reason']}")
     for item in failed:
+        lines.append(f"  ! {item['name']}  {item['reason']}")
+    return "\n".join(lines)
+
+
+def _render_multi(summary: dict) -> str:
+    """多目标批量收编的人类可读摘要。"""
+    lines = [f"已收编 {len(summary['adopted'])} 个 skill（来源：{', '.join(summary['targets'])}）"]
+    for item in summary["adopted"]:
+        lines.append(f"  + {item['id']}")
+    for item in summary["duplicates"]:
+        lines.append(f"  = {item['name']}  {item['reason']}")
+    for item in summary["conflicts"]:
+        lines.append(f"  ! {item['name']}  {item['reason']}")
+    for item in summary["skipped"]:
+        lines.append(f"  - {item['name']}  {item['reason']}")
+    for item in summary["failed"]:
         lines.append(f"  ! {item['name']}  {item['reason']}")
     return "\n".join(lines)

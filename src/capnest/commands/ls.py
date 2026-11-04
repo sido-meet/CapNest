@@ -18,12 +18,11 @@ TARGET_DISPLAY: dict[str, str] = {
 
 
 def source_label(record: dict[str, str]) -> str:
-    """资产的来源标签。本地创建的标 `local`。"""
-    source = record.get("source") or {}
-    target = source.get("target")
-    if not target:
+    """资产的来源标签。本地创建的标 `local`；多处都有就都列出来。"""
+    labels = _source_labels(record)
+    if not labels:
         return "local"
-    return TARGET_DISPLAY.get(target, target)
+    return " + ".join(labels)
 
 
 def _render(records: list[dict[str, str]]) -> str:
@@ -48,6 +47,21 @@ def _render(records: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
+def _source_labels(record: dict[str, str]) -> list[str]:
+    """一个资产的**各个**来源标签（去重，保持顺序）。"""
+    sources = record.get("sources") or []
+    if not sources:
+        source = record.get("source") or {}
+        sources = [source] if source.get("target") else []
+    labels: list[str] = []
+    for item in sources:
+        target = item.get("target") or ""
+        label = TARGET_DISPLAY.get(target, target)
+        if label and label not in labels:
+            labels.append(label)
+    return labels
+
+
 def ls(
     ctx: typer.Context,
     type_: str = typer.Option(None, "--type", help="只列出某一类资产"),
@@ -66,7 +80,11 @@ def ls(
     if type_:
         records = [record for record in records if record["type"] == type_]
     if source:
-        records = [record for record in records if source_label(record) == source]
+        records = [
+            record
+            for record in records
+            if source in _source_labels(record) or source_label(record) == source
+        ]
     if sort in SORT_KEYS:
         records.sort(key=lambda record: (record[sort], record["id"]))
 
