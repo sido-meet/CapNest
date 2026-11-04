@@ -56,18 +56,27 @@ def hash_file(path: Path) -> str:
     return hash_bytes(path.read_bytes())
 
 
-def hash_dir(path: Path, *, exclude: Sequence[str] | None = None) -> str:
+def hash_dir(
+    path: Path,
+    *,
+    exclude: Sequence[str] | None = None,
+    exclude_files: Sequence[str] | None = None,
+) -> str:
     """目录树的规范化哈希。
 
     `exclude` 是额外的排除目录名，追加在默认规则之外。
+    `exclude_files` 是额外的排除文件（相对路径，POSIX 风格）。
     """
     extra = set(exclude or ())
+    ignored_files = set(exclude_files or ())
     entries: list[tuple[str, Path]] = []
     for item in path.rglob("*"):
         if not item.is_file():
             continue
         relative = item.relative_to(path).as_posix()
         if is_excluded(relative):
+            continue
+        if relative in ignored_files:
             continue
         if extra.intersection(Path(relative).parts):
             continue
