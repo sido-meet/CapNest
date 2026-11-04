@@ -27,8 +27,9 @@ $utf8 = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText((Join-Path $src "SKILL.md"), ($skillLines -join "`n"), $utf8)
 
 function Invoke-Capnest {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
-    & uv run capnest @Args
+    # 不能用 $Args 作参数名——它是 PowerShell 的自动变量，会被静默吞掉。
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$CapnestArgs)
+    & uv run capnest @CapnestArgs
     return $LASTEXITCODE
 }
 
