@@ -46,13 +46,22 @@ class SkillsOnlyAdapter:
                     # 隐藏目录（`.builtin-skills`、暂存目录等）不是 skill。
                     continue
                 skills[item.name] = hash_dir(item)
-                if any(child.is_dir() for child in item.iterdir()):
+                if self._contains_nested_skill(item):
                     nested.append(item.name)
         return TargetState(
             skills=skills,
             nested=tuple(nested),
             config_fingerprint=self._config_fingerprint(),
         )
+
+    @staticmethod
+    def _contains_nested_skill(directory: Path) -> bool:
+        """目录里是否**套着**另一个 skill。
+
+        判据是「子目录里还有 `SKILL.md`」——像 `ai-research-skills/0-autoresearch-skill/SKILL.md`
+        这种。普通的资源目录（`references/`、`scripts/`）不算。
+        """
+        return any(manifest.parent != directory for manifest in directory.rglob("SKILL.md"))
 
     def _config_fingerprint(self) -> str:
         """配置文件的指纹。第一刀只读不写，但它被并发修改的风险最高。"""

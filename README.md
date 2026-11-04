@@ -23,6 +23,13 @@ uv run capnest --workspace .\workspace rollback --target mcode
 
 全局选项放在子命令之前（`capnest --workspace ./ws --json <命令>`）。完整命令规格见 [006 CLI](docs/006-cli.md)。
 
+想看目标 Agent 侧现在有哪些 skill：
+
+```powershell
+uv run capnest inspect claude-code
+uv run capnest inspect mcode
+```
+
 ## Setup
 
 安装与上手见 [SETUP.md](SETUP.md)。步骤较多，因此由一个 coding agent 与你一起完成：

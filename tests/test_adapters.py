@@ -52,6 +52,18 @@ def test_nested_skills_are_reported(tmp_path: Path, monkeypatch) -> None:
     assert state.nested == ("alpha",)
 
 
+def test_resource_subdirectories_are_not_nested(tmp_path: Path, monkeypatch) -> None:
+    """普通的资源目录（references/、scripts/）不算嵌套。"""
+    home = tmp_path / "mcode"
+    skill = make_home(home, "alpha")
+    (skill / "references").mkdir()
+    (skill / "references" / "guide.md").write_text("参考资料\n", encoding="utf-8")
+    monkeypatch.setenv("CAPNEST_TARGET_HOME_MCODE", str(home))
+
+    state = make_adapter("mcode").read()
+    assert state.nested == ()
+
+
 def test_hidden_directories_are_not_skills(tmp_path: Path, monkeypatch) -> None:
     home = tmp_path / "mcode"
     skills = make_home(home, "alpha")
