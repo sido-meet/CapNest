@@ -35,7 +35,12 @@ class CliResult:
 
 @pytest.fixture
 def run_cli(tmp_path: Path):
-    """在指定工作区里跑一次真实 CLI（子进程），返回退出码与输出。"""
+    """在指定工作区里跑一次真实 CLI（子进程），返回退出码与输出。
+
+    **默认隔离**：两个目标的 home 永远指向临时目录，
+    任何测试都不可能写到用户真实的 `~/.minimax` 或 `~/.claude`。
+    需要换目标时用 `env=` 显式覆盖。
+    """
 
     def _run(
         *args: str,
@@ -47,9 +52,13 @@ def run_cli(tmp_path: Path):
         environ.pop("CAPNEST_HOME", None)
         # 子进程固定用 UTF-8 输出，避免受本机控制台代码页影响。
         environ["PYTHONIOENCODING"] = "utf-8"
+        # 目标 home 一律重定向到临时目录——这是最后一道保险。
         for key in list(environ):
             if key.startswith("CAPNEST_TARGET_HOME_"):
                 environ.pop(key)
+        isolated = tmp_path / "isolated-targets"
+        environ["CAPNEST_TARGET_HOME_MCODE"] = str(isolated / "mcode")
+        environ["CAPNEST_TARGET_HOME_CLAUDE_CODE"] = str(isolated / "claude-code")
         if env:
             environ.update(env)
         argv = [sys.executable, "-m", "capnest"]
