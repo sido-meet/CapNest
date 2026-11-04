@@ -54,6 +54,16 @@ ENTRYPOINT_SUFFIXES: tuple[str, ...] = (".md", ".json", ".yaml", ".yml")
 MANIFEST_FILENAME = "capability.yaml"
 
 
+def content_hash(path: Path) -> str:
+    """目录的**内容**哈希：忽略 `capability.yaml`。
+
+    判断「是不是同一份能力」时只看实际内容——manifest 是 CapNest 的说明书，
+    不是能力本身。工作区那份多了 manifest，目标侧那份没有，
+    比内容时必须把它排除掉，否则同一份能力永远「不一样」。
+    """
+    return hash_dir(path, exclude_files=(MANIFEST_FILENAME,))
+
+
 @dataclass(frozen=True)
 class AssetRecord:
     """一个已登记的资产。"""
@@ -86,6 +96,14 @@ class AssetRecord:
         return self.manifest.metadata.source
 
     @property
+    def sources(self) -> list[SourceInfo]:
+        """资产在哪些 Agent 侧出现过。同一份能力两边都有时会有多条。"""
+        sources = list(self.manifest.metadata.sources)
+        if not sources and self.manifest.metadata.source is not None:
+            sources.append(self.manifest.metadata.source)
+        return sources
+
+    @property
     def entrypoint(self) -> str:
         return self.manifest.spec.entrypoint
 
@@ -109,6 +127,14 @@ class AssetRecord:
                 if self.source is not None
                 else {}
             ),
+            "sources": [
+                {
+                    "target": item.target,
+                    "name": item.name or "",
+                    "adoptedAt": item.adopted_at or "",
+                }
+                for item in self.sources
+            ],
         }
 
 
@@ -301,7 +327,7 @@ class AssetStore:
             manifest = manifest.model_copy(
                 update={
                     "metadata": manifest.metadata.model_copy(
-                        update={"source": source},
+                        update={"source": source, "sources": [source]},
                     )
                 }
             )
@@ -321,6 +347,57 @@ class AssetStore:
 
     # ------------------------------------------------------------------ 收编
 
+    def _find_skill(self, name: str) -> AssetRecord | None:
+        """按目录名找工作区里已有的 skill 资产。"""
+        for record in self.scan():
+            if record.asset_id == f"skills/{name}":
+                return record
+        return None
+
+    def claim_target_path(self, target: str, name: str) -> None:
+        """认领目标侧那个目录。
+
+        收编之后 CapNest 就**管**这份能力了：目标侧那一路径记进归属表，
+        指纹就是它现在的内容哈希。没有这条记录，后续 `apply` 会因为
+        「路径已存在且不由 CapNest 管理」拒绝写入——同步就永远做不成。
+        """
+        from capnest.deployment.ownership import OwnershipRegistry
+
+        path = default_target_paths(target).skills_path / name
+        if not path.is_dir():
+            return
+        registry = OwnershipRegistry(self.workspace.ownership_file)
+        registry.claim(path, hash_dir(path))
+        registry.save()
+
+    def merge_source(self, record: AssetRecord, source: SourceInfo) -> AssetRecord:
+        """把一个来源并进资产的 manifest。
+
+        同一份能力在两个 Agent 侧都有时，收编第二次**不该再复制一份**，
+        只该把第二个来源记上去。
+        """
+        manifest = record.manifest
+        sources = list(manifest.metadata.sources)
+        if not sources and manifest.metadata.source is not None:
+            sources.append(manifest.metadata.source)
+        if not any(item.target == source.target and item.name == source.name for item in sources):
+            sources.append(source)
+        updated = manifest.model_copy(
+            update={
+                "metadata": manifest.metadata.model_copy(
+                    update={"source": sources[0], "sources": sources}
+                )
+            }
+        )
+        write_manifest(record.path / MANIFEST_FILENAME, updated)
+        return AssetRecord(
+            asset_id=record.asset_id,
+            kind=record.kind,
+            path=record.path,
+            manifest=updated,
+            hash=hash_dir(record.path),
+        )
+
     def adopt_from_target(
         self,
         target: str,
@@ -331,6 +408,11 @@ class AssetStore:
         """从某个 Agent 的 skills 目录收编一个既有能力。
 
         只**读取**源目录——Agent 侧的文件一个字节都不动。
+
+        工作区里已经有同名资产时：
+
+        - 内容相同 → 不复制，只把来源并进去（这就是去重）；
+        - 内容不同 → 报冲突（退出码 7），除非 `--force`。
         """
         paths = default_target_paths(target)
         source_dir = paths.skills_path / name
@@ -339,7 +421,22 @@ class AssetStore:
                 f"{target} 侧没有名为 {name} 的 skill",
                 {"target": target, "name": name, "path": str(source_dir)},
             )
-        return self.import_path(
+        existing = self._find_skill(name)
+        if existing is not None and not force:
+            if content_hash(existing.path) == content_hash(source_dir):
+                merged = self.merge_source(existing, SourceInfo(target=target, name=name))
+                self.claim_target_path(target, name)
+                return merged
+            raise Conflict(
+                f"工作区里已有同名资产且内容不同：skills/{name}",
+                {
+                    "asset": f"skills/{name}",
+                    "target": target,
+                    "workspaceHash": content_hash(existing.path),
+                    "targetHash": content_hash(source_dir),
+                },
+            )
+        record = self.import_path(
             source_dir,
             "skill",
             name=name,
@@ -348,6 +445,8 @@ class AssetStore:
             # 而 CapNest 的哈希必须**可复现**——同一份来源，两次收编得到同一个哈希。
             source=SourceInfo(target=target, name=name),
         )
+        self.claim_target_path(target, name)
+        return record
 
     def adopt_candidates(self, target: str) -> tuple[list[str], list[dict[str, str]]]:
         """列出目标侧**可以收编**的 skill 名字，以及被跳过的那些。
@@ -385,6 +484,13 @@ class AssetStore:
 
         与单个收编的差别：``add --from <target>:<name>`` 命中隐藏 Unicode
         会整体中止（退出码 6），而批量收编只跳过命中的那一个。
+
+        每个候选分四种去向：
+
+        - **adopted**：收编进来；
+        - **duplicates**：工作区里已有同名且内容相同的资产——不复制，只并来源；
+        - **conflicts**：工作区里已有同名但内容不同的资产——不覆盖，记成冲突；
+        - **skipped / failed**：容器目录、嵌套目录、隐藏 Unicode，或导入失败。
         """
         adoptable, skipped = self.adopt_candidates(target)
         paths = default_target_paths(target)
@@ -395,10 +501,38 @@ class AssetStore:
                 unsafe.append(name)
 
         adopted: list[dict[str, object]] = []
+        duplicates: list[dict[str, object]] = []
+        conflicts: list[dict[str, object]] = []
         failed: list[dict[str, str]] = []
         for name in adoptable:
             if name in unsafe:
                 skipped.append({"name": name, "reason": "含隐藏 Unicode 字符，已跳过"})
+                continue
+            source_dir = paths.skills_path / name
+            existing = self._find_skill(name)
+            if existing is not None and not force:
+                if content_hash(existing.path) == content_hash(source_dir):
+                    merged = self.merge_source(existing, SourceInfo(target=target, name=name))
+                    self.claim_target_path(target, name)
+                    duplicates.append(
+                        {
+                            "name": name,
+                            "id": merged.asset_id,
+                            "target": target,
+                            "reason": "工作区里已有同一份内容，只并来源",
+                        }
+                    )
+                else:
+                    conflicts.append(
+                        {
+                            "name": name,
+                            "id": existing.asset_id,
+                            "target": target,
+                            "workspaceHash": content_hash(existing.path),
+                            "targetHash": content_hash(source_dir),
+                            "reason": "同名但内容不同，未覆盖",
+                        }
+                    )
                 continue
             try:
                 record = self.adopt_from_target(target, name, force=force)
@@ -413,8 +547,124 @@ class AssetStore:
         return {
             "target": target,
             "adopted": adopted,
+            "duplicates": duplicates,
+            "conflicts": conflicts,
             "skipped": skipped,
             "failed": failed,
             "unsafe": unsafe,
             "count": len(adopted),
         }
+
+    def adopt_all_from_targets(
+        self,
+        targets: list[str],
+        *,
+        force: bool = False,
+    ) -> dict[str, object]:
+        """从多个目标一次性收编。
+
+        每个目标各收各的：同名同内容自动去重，同名不同内容记成冲突，
+        一个目标上的冲突不影响另一个目标。
+        """
+        results = [self.adopt_all_from_target(target, force=force) for target in targets]
+        return {
+            "targets": list(targets),
+            "adopted": [item for result in results for item in result["adopted"]],
+            "duplicates": [item for result in results for item in result["duplicates"]],
+            "conflicts": [item for result in results for item in result["conflicts"]],
+            "skipped": [item for result in results for item in result["skipped"]],
+            "failed": [item for result in results for item in result["failed"]],
+            "count": sum(int(result["count"]) for result in results),
+        }
+
+    # ------------------------------------------------------------------ 查重
+
+    def find_conflicts(self, target: str) -> list[dict[str, str]]:
+        """工作区资产与目标侧同名目录**内容不同**的条目。"""
+        paths = default_target_paths(target)
+        conflicts: list[dict[str, str]] = []
+        for record in self.scan():
+            if record.kind is not CapabilityType.SKILL:
+                continue
+            target_dir = paths.skills_path / record.name
+            if not target_dir.is_dir():
+                continue
+            workspace_hash = content_hash(record.path)
+            target_hash = content_hash(target_dir)
+            if workspace_hash == target_hash:
+                continue
+            conflicts.append(
+                {
+                    "asset": record.asset_id,
+                    "name": record.name,
+                    "target": target,
+                    "workspaceHash": workspace_hash,
+                    "targetHash": target_hash,
+                    "targetPath": str(target_dir),
+                }
+            )
+        return conflicts
+
+    def find_duplicates(self) -> list[dict[str, object]]:
+        """**内容相同、名字不同**的资产组。"""
+        groups: dict[str, list[AssetRecord]] = {}
+        for record in self.scan():
+            groups.setdefault(content_hash(record.path), []).append(record)
+        duplicates: list[dict[str, object]] = []
+        for digest, members in groups.items():
+            if len(members) < 2:
+                continue
+            duplicates.append(
+                {
+                    "hash": digest,
+                    "assets": [item.asset_id for item in members],
+                    "names": [item.name for item in members],
+                }
+            )
+        return duplicates
+
+    # ------------------------------------------------------------------ 拉回
+
+    def pull_from_target(
+        self,
+        asset_id: str,
+        target: str,
+        name: str,
+    ) -> AssetRecord:
+        """把目标侧的内容**拉回**工作区。
+
+        这是「以目标为准」的裁决：目标侧那份内容成为工作区里的版本。
+        工作区自己的 `capability.yaml` 保留——它是 CapNest 的说明书，
+        不是能力内容的一部分。
+        """
+        from capnest.util.fs import copy_file, copy_tree
+
+        record = self.get(asset_id)
+        source_dir = default_target_paths(target).skills_path / name
+        if not source_dir.is_dir():
+            raise NotFound(
+                f"{target} 侧没有名为 {name} 的 skill",
+                {"target": target, "name": name, "path": str(source_dir)},
+            )
+        for item in list(record.path.iterdir()):
+            if item.name == MANIFEST_FILENAME:
+                continue
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+        for item in source_dir.iterdir():
+            if item.name == MANIFEST_FILENAME:
+                continue
+            destination = record.path / item.name
+            if item.is_dir():
+                copy_tree(item, destination)
+            else:
+                copy_file(item, destination)
+        return AssetRecord(
+            asset_id=record.asset_id,
+            kind=record.kind,
+            path=record.path,
+            manifest=record.manifest,
+            hash=hash_dir(record.path),
+        )
