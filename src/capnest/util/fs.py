@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -19,9 +21,35 @@ from pathlib import Path
 def copy_tree(src: Path, dst: Path) -> None:
     """复制整棵目录树，保留权限与修改时间。`dst` 已存在时先清空。"""
     if dst.exists():
-        shutil.rmtree(dst)
+        remove_tree(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(src, dst, symlinks=False, dirs_exist_ok=False)
+
+
+def _force_remove(func, path, exc) -> None:
+    """删不掉时的补救：先把只读位摘掉，再删一次。"""
+    try:
+        if os.path.isdir(path):
+            os.chmod(path, stat.S_IRWXU)
+        else:
+            os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except OSError:
+        pass
+
+
+def remove_tree(path: Path) -> None:
+    """删除整棵目录树，**连只读文件一起删掉**。
+
+    Windows 上只读文件是删不掉的——git 的 pack 文件就是 444。
+    不处理这个，替换一个带 `.git` 的 skill 目录就会半路失败。
+    """
+    if not path.exists():
+        return
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=_force_remove)
+    else:
+        shutil.rmtree(path, onerror=_force_remove)
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -61,7 +89,7 @@ def replace_dir(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     backup = dst.with_name(dst.name + ".capnest-old")
     if backup.exists():
-        shutil.rmtree(backup)
+        remove_tree(backup)
     had_old = dst.exists()
     if had_old:
         os.replace(dst, backup)
@@ -72,7 +100,7 @@ def replace_dir(src: Path, dst: Path) -> None:
             os.replace(backup, dst)
         raise
     if had_old:
-        shutil.rmtree(backup, ignore_errors=True)
+        remove_tree(backup)
 
 
 def symlink_supported(directory: Path | None = None) -> tuple[bool, str]:

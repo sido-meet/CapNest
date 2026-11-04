@@ -35,7 +35,7 @@ line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
 # ruff 0.17 会重排 Markdown 里的 Python 代码块；文档里的对齐注释是有意排的，排除掉。
-extend-exclude = ["*.md"]
+extend-exclude = ["*.md", "workspace"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -51,6 +51,7 @@ known-first-party = ["capnest"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["workspace", ".venv", "*.egg-info"]
 addopts = "-q"
 markers = [
     "e2e: 端到端命令行测试",

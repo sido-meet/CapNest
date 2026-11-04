@@ -108,5 +108,8 @@ def diff_skill(source: Path, target: Path | None, name: str) -> SkillDiff:
         if relative not in source_files:
             changes.append(FileChange(path=relative, action=EXTRA))
 
-    changed = any(item.action in (CREATE, UPDATE) for item in changes)
+    # 多出来的文件也算「变了」：更新是**整个目录替换**，
+    # 目标侧多出来的文件会随之消失——「两边完全相同」就得是这个意思。
+    # 目标侧被用户手工改过的情况由归属检查挡住（漂移 → 拒绝写入）。
+    changed = any(item.action in (CREATE, UPDATE, EXTRA) for item in changes)
     return SkillDiff(name=name, status=UPDATE if changed else UNCHANGED, files=changes)
