@@ -31,3 +31,6 @@ Thumbs.db
 .tmpws*/
 .sandbox/
 
+
+# 真实工作区（收编进来的 skill 源码也在里面，不进版本库）
+/workspace/

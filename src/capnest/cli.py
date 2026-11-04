@@ -67,6 +67,8 @@ def register_commands() -> None:
     from capnest.commands import (
         add,
         apply,
+        conflict,
+        dedupe,
         doctor,
         init,
         inspect,
@@ -76,6 +78,7 @@ def register_commands() -> None:
         rollback,
         search,
         status,
+        sync,
         validate,
     )
 
@@ -90,14 +93,24 @@ def register_commands() -> None:
     app.command("status")(status.status)
     app.command("rollback")(rollback.rollback)
     app.command("inspect")(inspect.inspect)
+    app.command("sync")(sync.sync)
+    app.command("dedupe")(dedupe.dedupe)
     app.add_typer(profile.app, name="profile")
+    app.add_typer(conflict.app, name="conflict")
 
 
 def main(argv: list[str] | None = None) -> None:
     """进程入口：把异常翻译成错误 envelope 与退出码。"""
     command = typer.main.get_command(app)
     try:
-        result = command.main(args=argv, standalone_mode=False)
+        # windows_expand_args=False：Windows 上 Click 会**模拟 shell 展开**，
+        # 于是 `--from "*"` 会被展开成当前目录的文件列表。CapNest 的
+        # 通配符是它自己的语义（`--from <target>:*`），不能让 shell 抢走。
+        result = command.main(
+            args=argv,
+            standalone_mode=False,
+            windows_expand_args=False,
+        )
     except CapNestError as exc:
         context = _current_context()
         if context is None:

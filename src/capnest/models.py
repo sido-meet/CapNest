@@ -78,6 +78,7 @@ class CapabilityMetadata(Base):
     version: str
     description: str | None = None
     source: SourceInfo | None = None
+    sources: list[SourceInfo] = Field(default_factory=list)
 
 
 class CapabilitySpec(Base):

@@ -12,7 +12,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from capnest.util.fs import copy_tree
+from capnest.util.fs import copy_tree, remove_tree
 
 
 @dataclass(frozen=True)
@@ -62,6 +62,6 @@ class BackupStore:
         """删掉一份备份。"""
         source = self.resolve(ref)
         if source.is_dir():
-            shutil.rmtree(source, ignore_errors=True)
+            remove_tree(source)
         elif source.exists():
             source.unlink()

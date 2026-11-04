@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import typer
@@ -17,6 +16,7 @@ from capnest.deployment.backup import BackupStore
 from capnest.deployment.ownership import OwnershipRegistry
 from capnest.deployment.state import DeploymentStore
 from capnest.errors import NotFound, UsageError
+from capnest.util.fs import remove_tree
 
 
 def rollback(
@@ -64,7 +64,7 @@ def rollback(
     for created in record.created_paths:
         path = Path(created)
         if path.exists():
-            shutil.rmtree(path, ignore_errors=True)
+            remove_tree(path)
             removed.append(created)
 
     # 目标 skills 目录如果是这次部署创建出来的，回滚后它应该消失。

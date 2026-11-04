@@ -18,7 +18,7 @@ from pathlib import Path
 
 from capnest.deployment.backup import BackupStore
 from capnest.hashing import hash_dir
-from capnest.util.fs import copy_tree
+from capnest.util.fs import copy_tree, remove_tree
 
 
 @dataclass(frozen=True)
@@ -81,13 +81,13 @@ class AtomicWriter:
                         target,
                     )
                     transaction.backups[str(target)] = ref
-                    shutil.rmtree(target)
+                    remove_tree(target)
                 else:
                     transaction.created.append(str(target))
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(payload), str(target))
                 transaction.committed.append(intent)
-                shutil.rmtree(staged, ignore_errors=True)
+                remove_tree(staged)
         except BaseException:
             self.abort(transaction)
             raise
@@ -102,10 +102,10 @@ class AtomicWriter:
             if ref:
                 self.backups.restore(ref, target)
             elif target.exists():
-                shutil.rmtree(target, ignore_errors=True)
+                remove_tree(target)
         transaction.committed.clear()
         for staged in transaction.staged.values():
-            shutil.rmtree(staged, ignore_errors=True)
+            remove_tree(staged)
         transaction.staged.clear()
 
     # ------------------------------------------------------------------ verify

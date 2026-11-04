@@ -15,7 +15,7 @@ from capnest.config import load_config
 from capnest.deployment.diff import SkillDiff, diff_skill
 from capnest.deployment.resolver import DeploymentPlan, resolve
 from capnest.errors import Conflict, NotFound, UsageError
-from capnest.models import DeploymentMode
+from capnest.models import CapabilityProfile, DeploymentMode
 from capnest.store.assets import AssetStore
 from capnest.store.profiles import ProfileStore
 from capnest.store.workspace import Workspace
@@ -84,6 +84,22 @@ def build_plans(
         profile = profiles.get(name)
     except NotFound:
         raise
+
+    return build_plans_for(workspace, profile, targets, mode=mode)
+
+
+def build_plans_for(
+    workspace: Workspace,
+    profile: CapabilityProfile,
+    targets: list[str],
+    *,
+    mode: DeploymentMode = DeploymentMode.COPY,
+) -> list[TargetPlan]:
+    """按**给定的 Profile 对象**算计划。
+
+    `sync` 用它：同步用的 Profile 是内存里临时拼出来的（工作区里的全部资产），
+    不必先落盘成一个 Profile 文件。
+    """
 
     records = AssetStore(workspace).scan()
     plans: list[TargetPlan] = []
