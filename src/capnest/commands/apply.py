@@ -67,47 +67,28 @@ def _check_ownership(workspace: Workspace, plans: list[TargetPlan]) -> None:
         )
 
 
-def apply(
-    ctx: typer.Context,
-    profile: str = typer.Option(None, "--profile", help="Profile 名"),
-    target: str = typer.Option("", "--target", help="目标，逗号分隔"),
-    yes: bool = typer.Option(False, "--yes", help="确认执行，不必交互"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="只做前置校验，不写任何文件"),
-    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
-) -> None:
-    """部署一个 Profile。"""
-    context: AppContext = ctx.obj
-    context.output.command = "apply"
-    use_json(context, json_)
-
-    workspace = ready_workspace(context)
-    names = parse_targets(target)
-    if not names:
-        from capnest.config import load_config
-
-        names = list(load_config(workspace.config_file).default_targets)
-    if not names:
-        raise UsageError("没有可用的目标，请用 --target 指定")
-
-    plans = build_plans(workspace, profile, names)
+def deploy(
+    workspace: Workspace,
+    plans: list[TargetPlan],
+    *,
+    yes: bool = False,
+    dry_run: bool = False,
+) -> dict[str, object]:
+    """执行一次部署。`apply` 与 `sync` 共用这一段——两边看到的必须是同一套规则。"""
     _scan_assets(plans)
     _check_ownership(workspace, plans)
 
     pending = [(plan, asset, diff) for plan in plans for asset, diff in _writable(plan)]
 
     if dry_run:
-        context.output.success(
-            {
-                "dry_run": True,
-                "targets": [item.to_dict() for item in plans],
-                "would_write": [
-                    {"target": plan.target, "asset": asset.asset_id, "status": diff.status}
-                    for plan, asset, diff in pending
-                ],
-            },
-            human=f"预演通过：将写入 {len(pending)} 个 skill",
-        )
-        return
+        return {
+            "dry_run": True,
+            "targets": [item.to_dict() for item in plans],
+            "would_write": [
+                {"target": plan.target, "asset": asset.asset_id, "status": diff.status}
+                for plan, asset, diff in pending
+            ],
+        }
 
     if pending and not yes:
         raise ConfirmationRequired(
@@ -193,9 +174,43 @@ def apply(
     registry.save()
     store.save(records)
 
+    return {"applied": applied, "timestamp": timestamp}
+
+
+def apply(
+    ctx: typer.Context,
+    profile: str = typer.Option(None, "--profile", help="Profile 名"),
+    target: str = typer.Option("", "--target", help="目标，逗号分隔"),
+    yes: bool = typer.Option(False, "--yes", help="确认执行，不必交互"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="只做前置校验，不写任何文件"),
+    json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
+) -> None:
+    """部署一个 Profile。"""
+    context: AppContext = ctx.obj
+    context.output.command = "apply"
+    use_json(context, json_)
+
+    workspace = ready_workspace(context)
+    names = parse_targets(target)
+    if not names:
+        from capnest.config import load_config
+
+        names = list(load_config(workspace.config_file).default_targets)
+    if not names:
+        raise UsageError("没有可用的目标，请用 --target 指定")
+
+    plans = build_plans(workspace, profile, names)
+    result = deploy(workspace, plans, yes=yes, dry_run=dry_run)
+
+    if dry_run:
+        context.output.success(
+            result,
+            human=f"预演通过：将写入 {len(result['would_write'])} 个 skill",
+        )
+        return
     context.output.success(
-        {"applied": applied, "timestamp": timestamp},
-        human=f"已部署 {len(applied)} 个目标",
+        result,
+        human=f"已部署 {len(result['applied'])} 个目标",
     )
 
 
