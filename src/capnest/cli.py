@@ -69,6 +69,7 @@ def register_commands() -> None:
         apply,
         doctor,
         init,
+        inspect,
         ls,
         plan,
         profile,
@@ -88,6 +89,7 @@ def register_commands() -> None:
     app.command("apply")(apply.apply)
     app.command("status")(status.status)
     app.command("rollback")(rollback.rollback)
+    app.command("inspect")(inspect.inspect)
     app.add_typer(profile.app, name="profile")
 
 
