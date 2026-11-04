@@ -108,6 +108,7 @@ spec:
 | `metadata.name` | 是 | 人类可读名称 |
 | `metadata.version` | 是 | 语义版本 |
 | `metadata.description` | 否 | 一句话说明 |
+| `metadata.source` | 否 | 资产从哪来。本地创建的资产没有它；从 Agent 侧**收编**来的资产会带上 `target`（`mcode` / `claude-code`）与 `name`（在那边叫什么） |
 | `spec.type` | 是（仅 `Capability`） | 协议类型：`skill` / `mcp-server` / `workflow` |
 | `spec.format` | 是（仅 `Capability`） | 内容格式标识，原生格式用其规范名 |
 | `spec.entrypoint` | 是（仅 `Capability`） | 入口文件，**相对于 Manifest 所在目录** |
@@ -117,6 +118,25 @@ spec:
 | `spec.components[].ref` | 是（仅 `CapabilityProfile`） | 引用的资产 ID 全名 |
 | `spec.components[].version` | 否（仅 `CapabilityProfile`） | 版本约束，省略表示沿用 Lockfile |
 | `spec.targets` | 否（仅 `CapabilityProfile`） | 部署目标 Agent |
+
+### 来源标记
+
+从 Agent 侧收编来的资产，`metadata.source` 记录它是从哪收的：
+
+```yaml
+metadata:
+  id: skills/doc-coauthoring
+  name: doc-coauthoring
+  version: 0.1.0
+  description: ''
+  source:
+    target: claude-code
+    name: doc-coauthoring
+```
+
+`list` 的 SOURCE 列直接读它；本地创建的资产没有这个字段，显示 `local`。
+
+**来源标记里不记时间戳**：时间戳会进入内容哈希，让同一份来源两次收编得到两个哈希。CapNest 的哈希必须**可复现**——收编时间交给 git 版本历史去记。
 
 ### `spec.format` 词表
 

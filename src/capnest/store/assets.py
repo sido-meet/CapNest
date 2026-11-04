@@ -15,7 +15,7 @@ import yaml
 from capnest.config import default_target_paths
 from capnest.errors import Conflict, NotFound, ValidationFailed
 from capnest.hashing import hash_dir
-from capnest.models import API_VERSION, Capability, CapabilityType
+from capnest.models import API_VERSION, Capability, CapabilityType, SourceInfo
 from capnest.security.scan import scan_tree
 from capnest.store.workspace import Workspace
 from capnest.util.fs import copy_tree
@@ -81,6 +81,11 @@ class AssetRecord:
         return self.manifest.spec.format
 
     @property
+    def source(self) -> SourceInfo | None:
+        """资产从哪来。None 表示本地创建。"""
+        return self.manifest.metadata.source
+
+    @property
     def entrypoint(self) -> str:
         return self.manifest.spec.entrypoint
 
@@ -95,6 +100,15 @@ class AssetRecord:
             "entrypoint": self.entrypoint,
             "hash": self.hash,
             "path": str(self.path),
+            "source": (
+                {
+                    "target": self.source.target,
+                    "name": self.source.name or "",
+                    "adoptedAt": self.source.adopted_at or "",
+                }
+                if self.source is not None
+                else {}
+            ),
         }
 
 
@@ -244,6 +258,7 @@ class AssetStore:
         *,
         name: str | None = None,
         force: bool = False,
+        source: SourceInfo | None = None,
     ) -> AssetRecord:
         """把一个外部目录导入工作区。**复制而非引用**。"""
         if kind not in KIND_TO_FAMILY:
@@ -251,12 +266,12 @@ class AssetStore:
                 f"未知的资产类型：{kind}",
                 {"kind": kind, "supported": sorted(KIND_TO_FAMILY)},
             )
-        source = src.expanduser().resolve()
-        if not source.is_dir():
-            raise NotFound(f"源路径不是目录：{source}", {"path": str(source)})
+        source_dir = src.expanduser().resolve()
+        if not source_dir.is_dir():
+            raise NotFound(f"源路径不是目录：{source_dir}", {"path": str(source_dir)})
 
         family = KIND_TO_FAMILY[kind]
-        asset_name = name or source.name
+        asset_name = name or source_dir.name
         destination = self.workspace.asset_dir(family) / asset_name
 
         if destination.exists() and not force:
@@ -265,12 +280,12 @@ class AssetStore:
                 {"asset": f"{family}/{asset_name}", "path": str(destination)},
             )
 
-        assert_safe(source)
+        assert_safe(source_dir)
 
-        manifest_path = source / MANIFEST_FILENAME
+        manifest_path = source_dir / MANIFEST_FILENAME
         if manifest_path.is_file():
             manifest = read_manifest(manifest_path)
-            entry = (source / manifest.spec.entrypoint.lstrip("./")).resolve()
+            entry = (source_dir / manifest.spec.entrypoint.lstrip("./")).resolve()
             if not entry.is_file():
                 raise ValidationFailed(
                     "manifest 的 entrypoint 指向的文件不存在",
@@ -280,11 +295,20 @@ class AssetStore:
                     },
                 )
         else:
-            manifest = build_manifest(kind, family, asset_name, source)
+            manifest = build_manifest(kind, family, asset_name, source_dir)
+
+        if source is not None:
+            manifest = manifest.model_copy(
+                update={
+                    "metadata": manifest.metadata.model_copy(
+                        update={"source": source},
+                    )
+                }
+            )
 
         if destination.exists():
             shutil.rmtree(destination)
-        copy_tree(source, destination)
+        copy_tree(source_dir, destination)
         write_manifest(destination / MANIFEST_FILENAME, manifest)
 
         return AssetRecord(
@@ -309,10 +333,88 @@ class AssetStore:
         只**读取**源目录——Agent 侧的文件一个字节都不动。
         """
         paths = default_target_paths(target)
-        source = paths.skills_path / name
-        if not source.is_dir():
+        source_dir = paths.skills_path / name
+        if not source_dir.is_dir():
             raise NotFound(
                 f"{target} 侧没有名为 {name} 的 skill",
-                {"target": target, "name": name, "path": str(source)},
+                {"target": target, "name": name, "path": str(source_dir)},
             )
-        return self.import_path(source, "skill", name=name, force=force)
+        return self.import_path(
+            source_dir,
+            "skill",
+            name=name,
+            force=force,
+            # 不记时间戳：时间戳会让内容哈希每次都变，
+            # 而 CapNest 的哈希必须**可复现**——同一份来源，两次收编得到同一个哈希。
+            source=SourceInfo(target=target, name=name),
+        )
+
+    def adopt_candidates(self, target: str) -> tuple[list[str], list[dict[str, str]]]:
+        """列出目标侧**可以收编**的 skill 名字，以及被跳过的那些。
+
+        v1 只支持单层 skill 目录：顶层没有 `SKILL.md` 的容器目录、
+        以及目录里还套着别的 skill 的，都跳过并说明原因。
+        """
+        from capnest.adapters import make_adapter
+
+        adapter = make_adapter(target)
+        state = adapter.read()
+        nested = set(state.nested)
+        adoptable: list[str] = []
+        skipped: list[dict[str, str]] = []
+        for name in sorted(state.skills):
+            path = adapter.skill_path(name)
+            if name in nested:
+                skipped.append({"name": name, "reason": "目录里套着别的 skill，v1 不支持"})
+                continue
+            if not (path / "SKILL.md").is_file():
+                skipped.append({"name": name, "reason": "顶层没有 SKILL.md，是容器目录"})
+                continue
+            adoptable.append(name)
+        return adoptable, skipped
+
+    def adopt_all_from_target(self, target: str, *, force: bool = False) -> dict[str, object]:
+        """把目标侧**所有**能收编的 skill 一次性收编进来。
+
+        三步走：
+
+        1. 列出可收编的，跳过容器目录与嵌套目录并说明原因；
+        2. 逐个扫描隐藏 Unicode，**命中的那一个被跳过**并记录——
+        不因为一份奇怪的文档挡住其余全部；
+        3. 逐个收编，单个失败（同名冲突等）只跳过并记录，不影响其余。
+
+        与单个收编的差别：``add --from <target>:<name>`` 命中隐藏 Unicode
+        会整体中止（退出码 6），而批量收编只跳过命中的那一个。
+        """
+        adoptable, skipped = self.adopt_candidates(target)
+        paths = default_target_paths(target)
+
+        unsafe: list[str] = []
+        for name in adoptable:
+            if scan_tree(paths.skills_path / name):
+                unsafe.append(name)
+
+        adopted: list[dict[str, object]] = []
+        failed: list[dict[str, str]] = []
+        for name in adoptable:
+            if name in unsafe:
+                skipped.append({"name": name, "reason": "含隐藏 Unicode 字符，已跳过"})
+                continue
+            try:
+                record = self.adopt_from_target(target, name, force=force)
+            except Conflict:
+                failed.append({"name": name, "reason": "工作区里已有同名资产"})
+                continue
+            except ValidationFailed as exc:
+                failed.append({"name": name, "reason": exc.message})
+                continue
+            adopted.append(record.to_dict())
+
+        return {
+            "target": target,
+            "adopted": adopted,
+            "skipped": skipped,
+            "failed": failed,
+            "unsafe": unsafe,
+            "count": len(adopted),
+        }

@@ -30,6 +30,14 @@ uv run capnest inspect claude-code
 uv run capnest inspect mcode
 ```
 
+想一次把目标侧的 skill 全收进工作区（`list` 的 SOURCE 列会显示 `Claude Code`）：
+
+```powershell
+uv run capnest --workspace .\workspace add --from claude-code:*
+uv run capnest --workspace .\workspace list
+uv run capnest --workspace .\workspace list --source "Claude Code"
+```
+
 ## Setup
 
 安装与上手见 [SETUP.md](SETUP.md)。步骤较多，因此由一个 coding agent 与你一起完成：

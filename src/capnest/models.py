@@ -58,6 +58,18 @@ class PhaseStatus(StrEnum):
     FAILED = "failed"
 
 
+class SourceInfo(Base):
+    """资产从哪来。
+
+    本地创建的资产没有 `source`；从 Agent 侧**收编**来的资产会带上它，
+    这样 `list` 一眼能看出「这份能力是从 Claude Code 收过来的」。
+    """
+
+    target: str
+    name: str | None = None
+    adopted_at: str | None = None
+
+
 class CapabilityMetadata(Base):
     """资产的元数据。"""
 
@@ -65,6 +77,7 @@ class CapabilityMetadata(Base):
     name: str
     version: str
     description: str | None = None
+    source: SourceInfo | None = None
 
 
 class CapabilitySpec(Base):

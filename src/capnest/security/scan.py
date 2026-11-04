@@ -196,6 +196,10 @@ def scan_file(path: Path, *, display: str | None = None) -> list[Finding]:
     text = decode_text(data)
     if text is None:
         return []
+    if text.startswith("\ufeff"):
+        # 文件开头的 BOM 是正常字节（UTF-8 签名），不是隐藏字符攻击。
+        # 只有夹在内容中间、或者出现在 frontmatter 里的 BOM 才值得警惕。
+        text = text[1:]
     return scan_text(text, file=display or path.name)
 
 
