@@ -23,7 +23,11 @@ def add(
     path: Path = typer.Argument(None, help="源目录"),
     name: str = typer.Option(None, "--name", help="资产名，缺省用目录名"),
     force: bool = typer.Option(False, "--force", help="已存在同名资产时覆盖"),
-    from_: str = typer.Option(None, "--from", help="从某个 Agent 收编：<target>:<name>"),
+    from_: str = typer.Option(
+        None,
+        "--from",
+        help="从某个 Agent 收编：<target>:<name>，或 <target>:* 收编全部",
+    ),
     json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
     """导入或收编一个能力。"""
@@ -41,6 +45,10 @@ def add(
                 "--from 的格式是 <target>:<name>",
                 {"value": from_, "example": "mcode:manim"},
             )
+        if asset_name == "*":
+            summary = store.adopt_all_from_target(target, force=force)
+            context.output.success(summary, human=_render_bulk(summary))
+            return
         record = store.adopt_from_target(target, asset_name, force=force)
     else:
         if not kind or path is None:
@@ -54,3 +62,18 @@ def add(
         record.to_dict(),
         human=f"已登记 {record.asset_id}（{record.version}）→ {record.path}",
     )
+
+
+def _render_bulk(summary: dict) -> str:
+    """批量收编的人类可读摘要。"""
+    adopted = summary["adopted"]
+    skipped = summary["skipped"]
+    failed = summary["failed"]
+    lines = [f"已收编 {len(adopted)} 个 skill（来源：{summary['target']}）"]
+    for item in adopted:
+        lines.append(f"  + {item['id']}")
+    for item in skipped:
+        lines.append(f"  - {item['name']}  {item['reason']}")
+    for item in failed:
+        lines.append(f"  ! {item['name']}  {item['reason']}")
+    return "\n".join(lines)
