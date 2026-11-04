@@ -281,6 +281,16 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [ ] T3.5 | 端到端 CLI 测试 | `tests/test_cli_e2e.py` | 临时工作区 + 临时 Agent HOME 跑完整六步闭环 |
 | [ ] T3.6 | 验收标准脚本化 | `tests/test_acceptance.py` | [008 Acceptance](008-acceptance.md) 八条逐条有对应测试 |
 | [ ] T3.7 | 失败路径测试 | `tests/test_failures.py` | 归属拒绝、Unicode 阻断、回滚冲突、缺资产 |
+| [x] T3.8 | 多来源 manifest 与内容哈希 | `src/capnest/models.py`, `src/capnest/hashing.py` | `metadata.sources` 记录资产在哪些 Agent 侧出现过；`content_hash()` 忽略 manifest |
+| [x] T3.9 | 收编即认领、去重与冲突识别 | `src/capnest/store/assets.py` | 收编后认领目标路径；同名同内容只并来源；同名不同内容记成冲突 |
+| [x] T3.10 | `conflict` 命令组 | `src/capnest/commands/conflict.py`, `src/capnest/store/conflicts.py` | `list` 列出分歧；`resolve --use workspace\|<target>:<name>` 裁决并落盘 |
+| [x] T3.11 | `dedupe` 命令 | `src/capnest/commands/dedupe.py` | 报告内容相同、名字不同的资产组 |
+| [x] T3.12 | `sync` 编排命令 | `src/capnest/commands/sync.py`, `src/capnest/commands/apply.py` | 收编 → 去重 → 冲突 → 同步一条命令走完；同步后逐个校验两边一致 |
+| [x] T3.13 | 多目标收编与通配符修正 | `src/capnest/commands/add.py`, `src/capnest/cli.py` | `add --from '*'` 收编所有目标；Windows 上不模拟 shell 通配符展开 |
+
+**T3.8–T3.13 这一条线回答的是「真实怎么用」**：两个 Agent 侧已有的 skill 收成一份、
+去重、看清分歧、裁过分歧、再同步回两边。它是 M1/M2 那些零件的**组合用法**，
+不是新零件——所以它排在 M3 而不是 M1。
 
 **M3 出口条件**：[008 Acceptance](008-acceptance.md) 八条全绿；打 tag `m3-hardened`。
 

@@ -109,6 +109,7 @@ spec:
 | `metadata.version` | 是 | 语义版本 |
 | `metadata.description` | 否 | 一句话说明 |
 | `metadata.source` | 否 | 资产从哪来。本地创建的资产没有它；从 Agent 侧**收编**来的资产会带上 `target`（`mcode` / `claude-code`）与 `name`（在那边叫什么） |
+| `metadata.sources` | 否 | 同一份能力在**多个** Agent 侧都有时，列出全部来源。`source` 始终等于第一个来源 |
 | `spec.type` | 是（仅 `Capability`） | 协议类型：`skill` / `mcp-server` / `workflow` |
 | `spec.format` | 是（仅 `Capability`） | 内容格式标识，原生格式用其规范名 |
 | `spec.entrypoint` | 是（仅 `Capability`） | 入口文件，**相对于 Manifest 所在目录** |
@@ -137,6 +138,24 @@ metadata:
 `list` 的 SOURCE 列直接读它；本地创建的资产没有这个字段，显示 `local`。
 
 **来源标记里不记时间戳**：时间戳会进入内容哈希，让同一份来源两次收编得到两个哈希。CapNest 的哈希必须**可复现**——收编时间交给 git 版本历史去记。
+
+同一份能力在两个 Agent 侧都有时，收编第二次**不会再复制一份**，
+只会把第二个来源并进 `metadata.sources`：
+
+```yaml
+metadata:
+  id: skills/doc-coauthoring
+  name: doc-coauthoring
+  version: 0.1.0
+  source:
+    target: mcode
+    name: doc-coauthoring
+  sources:
+    - target: mcode
+      name: doc-coauthoring
+    - target: claude-code
+      name: doc-coauthoring
+```
 
 ### `spec.format` 词表
 

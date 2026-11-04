@@ -4,7 +4,32 @@
 
 个人积累的 AI 能力（MCP Server / Skill / Workflow）独立于 Agent 存在，以版本化的 Profile 组合，一次部署到多个 Agent，得到**完全相同的一份能力**。
 
-> 当前处于实现阶段：M0 工程地基已落地，M1 资产层与 M2 部署层按 [任务清单](docs/007-tasks.md) 逐条推进。
+> 当前处于实现阶段：M0 工程地基、M1 资产层、M2 部署层已落地，
+> M3 的「统一管理」这条线（收编 → 去重 → 冲突 → 同步）已可用。
+
+## 真实场景：把两个 Agent 的 skill 收成一份
+
+```powershell
+uv run capnest init .\workspace
+
+# 1. 看看两个 Agent 侧现在各有什么
+uv run capnest inspect claude-code
+uv run capnest inspect mcode
+
+# 2. 全部收编进工作区（同名同内容自动去重，同名不同内容记成冲突）
+uv run capnest --workspace .\workspace add --from '*'
+
+# 3. 看重复、看分歧
+uv run capnest --workspace .\workspace dedupe
+uv run capnest --workspace .\workspace conflict list
+
+# 4. 裁掉分歧：以工作区为准 / 以目标为准
+uv run capnest --workspace .\workspace conflict resolve skills/docx --use workspace --target mcode
+
+# 5. 同步回两边（改一处 → 两边一致）
+uv run capnest --workspace .\workspace sync --yes
+uv run capnest --workspace .\workspace status
+```
 
 ## Quick start
 
