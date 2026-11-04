@@ -26,6 +26,7 @@ import typer
 from capnest.adapters import make_adapter
 from capnest.config import load_config
 from capnest.context import AppContext, ready_workspace, use_json
+from capnest.deployment.conflicts import detect_conflicts
 from capnest.deployment.ownership import OwnershipRegistry
 from capnest.deployment.planning import build_plans_for, parse_targets
 from capnest.errors import Conflict
@@ -78,12 +79,14 @@ def sync(
     conflicts: list[dict[str, str]] = []
     blocked: dict[str, list[str]] = {name: [] for name in names}
     for name in names:
-        for item in store.find_conflicts(name):
-            decision = resolutions.find(item["asset"], item["target"])
+        for item in detect_conflicts(workspace, name):
+            decision = resolutions.find(item.asset, item.target)
             resolved = decision is not None and decision.decision == WORKSPACE
-            conflicts.append({**item, "resolution": decision.decision if decision else ""})
+            conflicts.append(
+                {**item.to_dict(), "resolution": decision.decision if decision else ""}
+            )
             if not resolved:
-                blocked[name].append(item["asset"])
+                blocked[name].append(item.asset)
 
     # ---------------------------------------------------------------- 归属
     registry = OwnershipRegistry(workspace.ownership_file)

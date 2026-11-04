@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,7 +17,7 @@ from capnest.hashing import hash_dir
 from capnest.models import API_VERSION, Capability, CapabilityType, SourceInfo
 from capnest.security.scan import scan_tree
 from capnest.store.workspace import Workspace
-from capnest.util.fs import copy_tree
+from capnest.util.fs import copy_tree, remove_tree
 
 #: `add` 的 kind 参数 → `assets/` 下的目录名。
 KIND_TO_FAMILY: dict[str, str] = {
@@ -333,7 +332,7 @@ class AssetStore:
             )
 
         if destination.exists():
-            shutil.rmtree(destination)
+            remove_tree(destination)
         copy_tree(source_dir, destination)
         write_manifest(destination / MANIFEST_FILENAME, manifest)
 
@@ -579,32 +578,6 @@ class AssetStore:
 
     # ------------------------------------------------------------------ 查重
 
-    def find_conflicts(self, target: str) -> list[dict[str, str]]:
-        """工作区资产与目标侧同名目录**内容不同**的条目。"""
-        paths = default_target_paths(target)
-        conflicts: list[dict[str, str]] = []
-        for record in self.scan():
-            if record.kind is not CapabilityType.SKILL:
-                continue
-            target_dir = paths.skills_path / record.name
-            if not target_dir.is_dir():
-                continue
-            workspace_hash = content_hash(record.path)
-            target_hash = content_hash(target_dir)
-            if workspace_hash == target_hash:
-                continue
-            conflicts.append(
-                {
-                    "asset": record.asset_id,
-                    "name": record.name,
-                    "target": target,
-                    "workspaceHash": workspace_hash,
-                    "targetHash": target_hash,
-                    "targetPath": str(target_dir),
-                }
-            )
-        return conflicts
-
     def find_duplicates(self) -> list[dict[str, object]]:
         """**内容相同、名字不同**的资产组。"""
         groups: dict[str, list[AssetRecord]] = {}
@@ -650,7 +623,7 @@ class AssetStore:
             if item.name == MANIFEST_FILENAME:
                 continue
             if item.is_dir():
-                shutil.rmtree(item)
+                remove_tree(item)
             else:
                 item.unlink()
         for item in source_dir.iterdir():

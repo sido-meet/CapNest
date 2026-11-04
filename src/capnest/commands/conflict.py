@@ -1,9 +1,10 @@
 """`capnest conflict`：看分歧、裁分歧。
 
-**冲突**= 工作区里的资产与某个目标侧同名目录**内容不同**。
+**冲突**= 目标侧的内容与**工作区和上次部署都不一致**。
 
-CapNest 不替用户决定哪一份对。它只做两件事：把分歧摆出来，
-以及记住裁决——「以工作区为准」还是「以目标为准」。
+工作区更新了不算冲突——那是「改一处，两边同步」的正路。
+目标侧被外部改了才算：CapNest 不替用户决定哪一份对，
+它只把分歧摆出来，并记住裁决（以工作区为准 / 以目标为准）。
 裁决记在 `state/conflicts.json`，下一次 `sync` 直接照办。
 """
 
@@ -13,6 +14,7 @@ import typer
 
 from capnest.config import DEFAULT_TARGETS
 from capnest.context import AppContext, ready_workspace, use_json
+from capnest.deployment.conflicts import detect_conflicts, target_path
 from capnest.deployment.planning import parse_targets
 from capnest.deployment.state import iso_now
 from capnest.errors import NotFound, UsageError
@@ -33,22 +35,22 @@ def list_conflicts(
     target: str = typer.Option("", "--target", help="只看某个目标，逗号分隔"),
     json_: bool = typer.Option(False, "--json", help="以 JSON 输出到 stdout"),
 ) -> None:
-    """列出全部内容冲突。"""
+    """列出全部需要裁决的分歧。"""
     context: AppContext = ctx.obj
     context.output.command = "conflict list"
     use_json(context, json_)
 
     workspace = ready_workspace(context)
-    store = AssetStore(workspace)
     resolutions = ConflictStore(workspace)
 
     rows: list[dict[str, str]] = []
     for name in _targets(target):
-        for item in store.find_conflicts(name):
-            decision = resolutions.find(item["asset"], item["target"])
+        for item in detect_conflicts(workspace, name):
+            decision = resolutions.find(item.asset, item.target)
             rows.append(
                 {
-                    **item,
+                    **item.to_dict(),
+                    "targetPath": str(target_path(name, item.name)),
                     "resolution": decision.decision if decision else "",
                     "resolvedAt": decision.at if decision else "",
                 }
@@ -57,7 +59,7 @@ def list_conflicts(
     payload = {"conflicts": rows, "count": len(rows)}
     human = (
         "\n".join(
-            f"{row['asset']:<28} {row['target']:<12} "
+            f"{row['asset']:<28} {row['target']:<12} {row['kind']:<12} "
             f"{row['resolution'] or '未裁决':<12} {row['name']}"
             for row in rows
         )
@@ -95,6 +97,8 @@ def resolve_conflict(
         if not names:
             raise UsageError("请用 --target 指定冲突发生在哪个目标上")
         for item in names:
+            # 认领目标路径：CapNest 从这一刻起接管它，
+            # 下次同步才能合法覆盖它（归属检查要过）。
             store.claim_target_path(item, name)
             resolutions.resolve(asset, item, WORKSPACE, iso_now())
         context.output.success(
