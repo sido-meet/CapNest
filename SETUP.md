@@ -149,6 +149,16 @@ uv run capnest inspect mcode
 uv run capnest --workspace .\workspace add --from claude-code:<名字>
 ```
 
+想一次全收：
+
+```powershell
+uv run capnest --workspace .\workspace add --from claude-code:*
+```
+
+收编来的资产会在 `list` 的 SOURCE 列显示 `Claude Code`；本地创建的显示 `local`。用 `--source "Claude Code"` 可以只看某一来源。
+
+容器目录（一堆 skill 的集合）与嵌套目录会被跳过并说明原因；含隐藏 Unicode 字符的那一个也会被跳过。
+
 ## 3. 让 Agent 帮你完成
 
 `capnest` 的 `--json` 输出是一份稳定协议，GUI 与 Agent 都依赖它。因此可以直接让 Agent 操作：

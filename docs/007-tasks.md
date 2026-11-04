@@ -227,6 +227,8 @@ T2.1 → T2.2 → T2.7 → T2.8 → T2.12 → T2.13 → T2.14 → T3.x
 | [x] T1.15 | 演示资产 | `examples/data-agent/assets/skills/sql-analysis/` | Skill 一份（MCP / Workflow 样例随第二刀的 MCP 一起补） |
 | [x] T1.16 | 单元测试 | `tests/test_models.py`, `test_hashing.py`, `test_scan.py`, `test_assets.py`, `test_profiles.py`, `test_validation.py`, `test_cli_m1.py` | 覆盖率 ≥ 80%（`deployment/` 除外） |
 | [x] T1.17 | 文档对齐 | `README.md`, `SETUP.md`, `docs/006-cli.md` | CLI 段落与实际行为一致；`add --from` 写进文档 |
+| [x] T1.18 | 资产来源标记 | `src/capnest/models.py`, `store/assets.py` | 收编来的资产在 `metadata.source` 里记下来源；`list` 显示 SOURCE 列 |
+| [x] T1.19 | 批量收编 | `src/capnest/store/assets.py`, `commands/add.py` | `add --from <target>:*` 一次收编全部；容器目录与嵌套目录跳过并说明 |
 
 **M1 出口条件**：M1 验收命令全部通过；打 tag `m1-registry`。
 
